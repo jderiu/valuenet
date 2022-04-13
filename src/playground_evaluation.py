@@ -3,10 +3,10 @@ import os
 import wandb
 from pytictoc import TicToc
 
-from config import read_arguments_evaluation
-from intermediate_representation.sem2sql.sem2SQL import transform_semQL_to_sql
-from spider import spider_utils
-from spider.test_suite_eval.evaluation import evaluate
+from src.config import read_arguments_evaluation
+from src.intermediate_representation.sem2sql.sem2SQL import transform_semQL_to_sql
+from src.spider import spider_utils
+from src.spider.test_suite_eval.evaluation import evaluate
 
 ####### use this code to test the ground-truth directly with the Spider-Execution validation
 ####### that way we can test the SQL -> SemQL -> SQL round trip. Use sql_data for the whole training set or val_sql_data for dev

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from named_entity_recognition.pre_process_ner_values import _compose_date, \
+from src.named_entity_recognition.pre_process_ner_values import _compose_date, \
     _build_ngrams
 
 

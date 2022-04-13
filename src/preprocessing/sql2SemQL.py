@@ -14,8 +14,8 @@ import json
 import sys
 from typing import List, Union
 
-from preprocessing.utils import load_dataSets, find_table_of_star_column
-from intermediate_representation.semQL import Root1, Root, N, A, C, T, Sel, Sup, Filter, Order, V
+from src.preprocessing.utils import load_dataSets, find_table_of_star_column
+from src.intermediate_representation.semQL import Root1, Root, N, A, C, T, Sel, Sup, Filter, Order, V
 
 sys.path.append("..")
 

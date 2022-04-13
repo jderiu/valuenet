@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from transformers import BertTokenizer
 
-from model.encoder.input_features import encode_input, _tokenize_values
+from src.model.encoder.input_features import encode_input, _tokenize_values
 
 
 class Test(TestCase):

@@ -7,7 +7,7 @@ import torch.nn.utils
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
-from intermediate_representation.semQL import N, A, C, T, V, Filter, Order, Sup
+from src.intermediate_representation.semQL import N, A, C, T, V, Filter, Order, Sup
 
 
 class BasicModel(nn.Module):

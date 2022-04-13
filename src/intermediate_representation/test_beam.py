@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from intermediate_representation.beam import Beams
-from intermediate_representation.semQL import Root1, Root, Sel, N, Order, Filter, A, T, C, V
+from src.intermediate_representation.beam import Beams
+from src.intermediate_representation.semQL import Root1, Root, Sel, N, Order, Filter, A, T, C, V
 
 
 class TestBeams(TestCase):

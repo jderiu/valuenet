@@ -1,10 +1,10 @@
 import argparse
 import json
 
-from intermediate_representation.sem2sql.infer_from_clause import generate_path_by_graph
-from intermediate_representation.sem2sql.sem2SQL import build_graph
-from preprocessing.utils import find_table_of_star_column
-from spider.spider_utils import load_schema
+from src.intermediate_representation.sem2sql.infer_from_clause import generate_path_by_graph
+from src.intermediate_representation.sem2sql.sem2SQL import build_graph
+from src.preprocessing.utils import find_table_of_star_column
+from src.spider.spider_utils import load_schema
 
 
 def model_simple_joins_as_filter(entry, schema):

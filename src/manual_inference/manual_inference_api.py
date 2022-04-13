@@ -7,17 +7,17 @@ from flask_cors import CORS
 
 from spacy.lang.en import English
 
-from config import read_arguments_manual_inference
-from intermediate_representation import semQL
-from manual_inference.helper import tokenize_question, _inference_semql, _pre_processing, _semql_to_sql, \
+from src.config import read_arguments_manual_inference
+from src.intermediate_representation import semQL
+from src.manual_inference.helper import tokenize_question, _inference_semql, _pre_processing, _semql_to_sql, \
     _execute_query_postgresql, get_schemas_spider, get_schemas_cordis, get_data_folder_by_database, \
     _execute_query_sqlite, get_schema_hack_zurich
-from model.model import IRNet
-from named_entity_recognition.database_value_finder.database_value_finder_postgresql import \
+from src.model.model import IRNet
+from src.named_entity_recognition.database_value_finder.database_value_finder_postgresql import \
     DatabaseValueFinderPostgreSQL
-from named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
-from preprocessing.utils import merge_data_with_schema
-from utils import setup_device, set_seed_everywhere
+from src.named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
+from src.preprocessing.utils import merge_data_with_schema
+from src.utils import setup_device, set_seed_everywhere
 
 app = Flask(__name__, instance_path=f"/{os.getcwd()}/instance")
 CORS(app)

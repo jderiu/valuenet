@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from model.basic_model import BasicModel
+from src.model.basic_model import BasicModel
 
-from intermediate_representation.semQL import N, A, C, T, V, Sel, Filter, Order, Sup, Root1, Root
+from src.intermediate_representation.semQL import N, A, C, T, V, Sel, Filter, Order, Sup, Root1, Root
 
 
 class TestBasicModel(TestCase):

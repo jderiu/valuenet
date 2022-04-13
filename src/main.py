@@ -58,6 +58,12 @@ if __name__ == '__main__':
     for epoch in tqdm(range(int(args.num_epochs))):
         sketch_loss_weight = 1 if epoch < args.loss_epoch_threshold else args.sketch_loss_weight
 
+        with torch.no_grad():
+            sketch_acc, acc, _, predictions = evaluate(model,
+                                                       dev_loader,
+                                                       table_data,
+                                                       args.beam_size)
+
         t.tic()
         global_step = train(global_step,
                             train_loader,
