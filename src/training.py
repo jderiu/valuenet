@@ -36,6 +36,14 @@ def train(global_step,
 
         loss = lf_loss_weight * mean_lf_loss + sketch_loss_weight * mean_sketch_loss
 
+        wandb.log(
+            {
+                'train/loss': float(loss),
+                'train/mean_lf_loss': float(mean_lf_loss),
+                'train/mean_sketch_loss': float(mean_sketch_loss),
+            }
+        )
+
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
 
