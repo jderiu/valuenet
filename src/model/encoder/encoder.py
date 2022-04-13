@@ -5,7 +5,7 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_se
 from transformers.models.bart.modeling_bart import BartModel, BartConfig
 from transformers.models.bart.tokenization_bart import BartTokenizer
 
-from model.encoder.input_features import encode_input
+from src.model.encoder.input_features import encode_input
 
 
 class TransformerEncoder(nn.Module):

@@ -7,17 +7,17 @@ import wandb
 from tqdm import tqdm
 import json
 
-from config import read_arguments_evaluation
-from data_loader import get_data_loader
-from intermediate_representation import semQL
-from intermediate_representation.sem2sql.sem2SQL import transform_semQL_to_sql
-from manual_inference.helper import _execute_query_postgresql
-from model.model import IRNet
-from spider import spider_utils
-from spider.example_builder import build_example
-from spider.test_suite_eval.exec_eval import result_eq
-from utils import setup_device, set_seed_everywhere
-import spider.test_suite_eval.evaluation as spider_evaluation
+from src.config import read_arguments_evaluation
+from src.data_loader import get_data_loader
+from src.intermediate_representation import semQL
+from src.intermediate_representation.sem2sql.sem2SQL import transform_semQL_to_sql
+from src.manual_inference.helper import _execute_query_postgresql
+from src.model.model import IRNet
+from src.spider import spider_utils
+from src.spider.example_builder import build_example
+from src.spider.test_suite_eval.exec_eval import result_eq
+from src.utils import setup_device, set_seed_everywhere
+import src.spider.test_suite_eval.evaluation as spider_evaluation
 
 
 def evaluate(model, dev_loader, schema, beam_size):
