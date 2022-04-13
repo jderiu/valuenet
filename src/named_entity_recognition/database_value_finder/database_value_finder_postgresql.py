@@ -1,6 +1,6 @@
 import psycopg2
 
-from named_entity_recognition.database_value_finder.database_value_finder import DatabaseValueFinder
+from src.named_entity_recognition.database_value_finder.database_value_finder import DatabaseValueFinder
 
 
 class DatabaseValueFinderPostgreSQL(DatabaseValueFinder):

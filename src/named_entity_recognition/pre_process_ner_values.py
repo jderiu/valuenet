@@ -2,12 +2,12 @@ from pytictoc import TicToc
 
 from nltk import ngrams
 
-from named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
-from named_entity_recognition.handcrafted_heuristics import find_values_in_quote, find_ordinals, \
+from src.named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
+from src.named_entity_recognition.handcrafted_heuristics import find_values_in_quote, find_ordinals, \
     find_emails, find_genders, find_null_empty_values, find_variety_of_common_mentionings, find_special_codes, \
     find_single_letters, find_capitalized_words, find_months, find_location_abbreviations
 
-from named_entity_recognition.ner_extraction_data_dto import NerExtractionData
+from src.named_entity_recognition.ner_extraction_data_dto import NerExtractionData
 
 all_database_value_finder = {}
 

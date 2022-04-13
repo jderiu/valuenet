@@ -3,7 +3,7 @@ import json
 
 import numpy as np
 
-from intermediate_representation.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, V, Root1
+from src.intermediate_representation.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, V, Root1
 
 
 def _build_single_filter(lf, f):

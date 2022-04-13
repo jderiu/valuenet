@@ -5,12 +5,12 @@ import os
 import nltk
 from pytictoc import TicToc
 
-from named_entity_recognition.database_value_finder.database_value_finder_postgresql import \
+from src.named_entity_recognition.database_value_finder.database_value_finder_postgresql import \
     DatabaseValueFinderPostgreSQL
-from named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
-from named_entity_recognition.pre_process_ner_values import pre_process_ner_candidates, match_values_in_database, \
+from src.named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
+from src.named_entity_recognition.pre_process_ner_values import pre_process_ner_candidates, match_values_in_database, \
     add_non_found_values
-from preprocessing.utils import load_dataSets, wordnet_lemmatizer, symbol_filter, get_multi_token_match, \
+from src.preprocessing.utils import load_dataSets, wordnet_lemmatizer, symbol_filter, get_multi_token_match, \
     get_single_token_match, get_partial_match, AGG
 
 import multiprocessing

@@ -6,9 +6,9 @@ from typing import List
 
 from spacy.lang.en import English
 
-from manual_inference.helper import get_schemas_cordis, tokenize_question, get_schema_hack_zurich
-from spider.test_suite_eval.process_sql import get_sql
-from tools.training_data_builder.schema import build_schema_mapping, SchemaIndex
+from src.manual_inference.helper import get_schemas_cordis, tokenize_question, get_schema_hack_zurich
+from src.spider.test_suite_eval.process_sql import get_sql
+from src.tools.training_data_builder.schema import build_schema_mapping, SchemaIndex
 
 def transform_sample(sample, schema_dict, tokenizer):
     database = sample['db_id']

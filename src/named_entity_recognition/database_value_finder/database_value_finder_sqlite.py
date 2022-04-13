@@ -9,7 +9,7 @@ from textdistance import DamerauLevenshtein
 import multiprocessing
 from joblib import Parallel, delayed
 
-from named_entity_recognition.database_value_finder.database_value_finder import DatabaseValueFinder
+from src.named_entity_recognition.database_value_finder.database_value_finder import DatabaseValueFinder
 
 NUM_CORES = multiprocessing.cpu_count()
 

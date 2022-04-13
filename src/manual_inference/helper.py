@@ -5,13 +5,13 @@ from pathlib import Path
 import psycopg2
 import torch
 
-from config import Config
-from intermediate_representation.sem_utils import alter_column0
-from named_entity_recognition.api_ner.google_api_repository import remote_named_entity_recognition
-from preprocessing.pre_process import pre_process
-from spider import spider_utils
-from spider.example_builder import build_example
-from intermediate_representation.sem2sql.sem2SQL import transform
+from src.config import Config
+from src.intermediate_representation.sem_utils import alter_column0
+from src.named_entity_recognition.api_ner.google_api_repository import remote_named_entity_recognition
+from src.preprocessing.pre_process import pre_process
+from src.spider import spider_utils
+from src.spider.example_builder import build_example
+from src.intermediate_representation.sem2sql.sem2SQL import transform
 
 
 def _inference_semql(data_row, schemas, model, beam_size):
