@@ -89,7 +89,10 @@ def match_values_in_database(db_value_finder, extracted_data, include_primary_ke
     tic_toc = TicToc()
     tic_toc.tic()
     print(f'Look for potential candidates "{candidates}" in database {db_value_finder.database} (include primary keys: {include_primary_keys})')
-    matching_db_values = db_value_finder.find_similar_values_in_database(candidates, include_primary_keys)
+    if len(candidates) == 0:
+        matching_db_values = []
+    else:
+        matching_db_values = db_value_finder.find_similar_values_in_database(candidates, include_primary_keys)
     print(f'Confirmed the following candidates "{matching_db_values}"')
     tic_toc.toc()
 

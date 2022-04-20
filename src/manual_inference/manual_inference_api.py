@@ -11,7 +11,7 @@ from src.config import read_arguments_manual_inference
 from src.intermediate_representation import semQL
 from src.manual_inference.helper import tokenize_question, _inference_semql, _pre_processing, _semql_to_sql, \
     _execute_query_postgresql, get_schemas_spider, get_schemas_cordis, get_data_folder_by_database, \
-    _execute_query_sqlite, get_schema_hack_zurich
+    _execute_query_sqlite, get_schema_hack_zurich, get_schema_world_cup
 from src.model.model import IRNet
 from src.named_entity_recognition.database_value_finder.database_value_finder_postgresql import \
     DatabaseValueFinderPostgreSQL
@@ -32,6 +32,7 @@ connection_config = {k: v for k, v in vars(args).items() if k.startswith('databa
 schemas_raw_spider, schemas_dict_spider, schema_path_spider, database_path_spider = get_schemas_spider()
 schemas_raw_cordis, schemas_dict_cordis, schema_path_cordis, _ = get_schemas_cordis()
 schemas_raw_hack_zurich, schemas_dict_hack_zurich, schema_path_hack_zurich = get_schema_hack_zurich()
+schemas_raw_world_cup, schemas_dict_world_cup, schema_path_world_cup = get_schema_world_cup()
 
 grammar = semQL.Grammar()
 model = IRNet(args, device, grammar)
@@ -109,6 +110,11 @@ def pose_question(database):
         db_value_finder = DatabaseValueFinderPostgreSQL(database, schema_path_hack_zurich, connection_config)
         execute_query_func = lambda sql_to_execute: _execute_query_postgresql(sql_to_execute, database,
                                                                               connection_config)
+    elif get_data_folder_by_database(database) == 'world_cup_data_v2':
+        schemas_raw = schemas_raw_world_cup
+        schemas_dict = schemas_dict_world_cup
+        db_value_finder = DatabaseValueFinderPostgreSQL(database, schema_path_world_cup, connection_config)
+        execute_query_func = lambda sql_to_execute: _execute_query_postgresql(sql_to_execute, database, connection_config)
     else:
         schemas_raw = schemas_raw_spider
         schemas_dict = schemas_dict_spider

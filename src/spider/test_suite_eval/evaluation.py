@@ -26,8 +26,8 @@ import argparse
 
 import wandb
 
-from spider.test_suite_eval.process_sql import get_schema, Schema, get_sql
-from spider.test_suite_eval.exec_eval import eval_exec_match
+from src.spider.test_suite_eval.process_sql import get_schema, Schema, get_sql
+from src.spider.test_suite_eval.exec_eval import eval_exec_match
 
 # Flag to disable value evaluation
 DISABLE_VALUE = True
@@ -711,6 +711,57 @@ def evaluate(gold, predict, db_dir, etype, kmaps, plug_value, keep_distinct, pro
 
     return print_scores(scores, etype, training_step, include_turn_acc=include_turn_acc)
 
+
+def convert_sql_to_dict(sql_str, schema):
+    try:
+        p_sql, _ = get_sql(schema, sql_str)
+    except:
+        # If p_sql is not valid, then we will use an empty sql to evaluate with the correct sql
+        p_sql = {
+            "except": None,
+            "from": {
+                "conds": [],
+                "table_units": []
+            },
+            "groupBy": [],
+            "having": [],
+            "intersect": None,
+            "limit": None,
+            "orderBy": [],
+            "select": [
+                False,
+                []
+            ],
+            "union": None,
+            "where": []
+        }
+    return p_sql
+
+
+def match_evaluation_single(g_str, p_str, db_name, schema, kmaps):
+    evaluator = Evaluator()
+    Schema(get_schema(db_name))
+    g_sql = convert_sql_to_dict(g_str, schema)
+    p_sql = convert_sql_to_dict(p_str, schema)
+
+    hardness = evaluator.eval_hardness(g_sql)
+    kmap = kmaps[db_name]
+    g_valid_col_units = build_valid_col_units(g_sql['from']['table_units'], schema)
+    g_sql = rebuild_sql_val(g_sql)
+    g_sql = rebuild_sql_col(g_valid_col_units, g_sql, kmap)
+    p_valid_col_units = build_valid_col_units(p_sql['from']['table_units'], schema)
+    p_sql = rebuild_sql_val(p_sql)
+    p_sql = rebuild_sql_col(p_valid_col_units, p_sql, kmap)
+    exact_score = evaluator.eval_exact_match(p_sql, g_sql)
+    partial_scores = evaluator.partial_scores
+
+    return {
+        'predictSQL': p_str,
+        'goldSQL': g_str,
+        'hardness': hardness,
+        'exact': exact_score,
+        'partial': partial_scores
+    }
 
 # Rebuild SQL functions for value evaluation
 def rebuild_cond_unit_val(cond_unit):

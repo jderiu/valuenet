@@ -102,6 +102,6 @@ if __name__ == '__main__':
         with open(os.path.join(output_path, "eval_results.log"), "a+", encoding='utf-8') as writer:
             writer.write(eval_results_string + "\n")
 
-        wandb.log({"eval/Sketch-accuracy": sketch_acc, "eval/accuracy": acc}, step=epoch + 1)
+        wandb.log({"eval/Sketch-accuracy": sketch_acc, "eval/accuracy": acc})
 
         scheduler.step()  # Update learning rate schedule

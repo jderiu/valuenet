@@ -16,7 +16,7 @@ def infer_from_clause(table_names, graph, columns):
         # the first case is kind of an exception case, as we need to write two tables, for example: "A AS T1 JOIN B AS T2 ON ....".
         # All the following joins will only be "... JOIN T2 ON ...."
         if idx == 0:
-            stringified_join_clauses.append("{} AS {} JOIN {} AS {} ON {}.{} = {}.{}".format(start,
+            stringified_join_clauses.append('{} AS {} JOIN {} AS {} ON {}."{}" = {}."{}"'.format(start,
                                                                                            start_alias,
                                                                                            end,
                                                                                            end_alias,
@@ -25,7 +25,7 @@ def infer_from_clause(table_names, graph, columns):
                                                                                            end_alias,
                                                                                            exit_column))
         else:
-            stringified_join_clauses.append("JOIN {} AS {} ON {}.{} = {}.{}".format(end,
+            stringified_join_clauses.append('JOIN {} AS {} ON {}."{}" = {}."{}"'.format(end,
                                                                                   end_alias,
                                                                                   start_alias,
                                                                                   entry_column,

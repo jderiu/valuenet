@@ -17,7 +17,7 @@ import numpy as np
 import os
 import torch
 from nltk.stem import WordNetLemmatizer
-
+from src.spider.test_suite_eval.process_sql import get_schema, Schema, get_sql
 # from dataset import Example
 # from rule import lf
 # from rule.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, Root1
@@ -156,3 +156,11 @@ def load_schema(schema_path):
 
     table_dict = {table['db_id']: table for table in table_data}
     return table_data, table_dict
+
+
+def load_all_schema_data(db_dir, db_names):
+    db_names_to_schema = {}
+    for db_name in db_names:
+        s = Schema(get_schema(os.path.join(db_dir, db_name, db_name + ".sqlite")))
+        db_names_to_schema[db_name] = s
+    return db_names_to_schema

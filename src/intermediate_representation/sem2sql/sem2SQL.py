@@ -312,7 +312,7 @@ def replace_col_with_original_col(query, col, current_table):
     assert single_final_col
     # if query != single_final_col:
     #     print(query, single_final_col)
-    return single_final_col, single_final_col_idx
+    return f'"{single_final_col}"', single_final_col_idx
 
 
 def build_graph(schema):

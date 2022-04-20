@@ -8,7 +8,7 @@ from collections import defaultdict
 import tqdm
 import random
 
-from spider.test_suite_eval.parse import get_all_preds_for_execution, remove_distinct
+from src.spider.test_suite_eval.parse import get_all_preds_for_execution, remove_distinct
 import time
 import pickle as pkl
 import subprocess

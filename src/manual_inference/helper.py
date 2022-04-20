@@ -8,6 +8,7 @@ import torch
 from src.config import Config
 from src.intermediate_representation.sem_utils import alter_column0
 from src.named_entity_recognition.api_ner.google_api_repository import remote_named_entity_recognition
+from src.named_entity_recognition.local_ner.spacy_ner import local_named_entity_recognition
 from src.preprocessing.pre_process import pre_process
 from src.spider import spider_utils
 from src.spider.example_builder import build_example
@@ -45,7 +46,7 @@ def tokenize_question(tokenizer, question):
 
 
 def _pre_processing(example, db_value_finder, ner_api_secret):
-    ner_information = remote_named_entity_recognition(example['question'], ner_api_secret)
+    ner_information = local_named_entity_recognition(example['question'])
 
     token_grouped, token_types, column_matches, value_candidates, _ = pre_process(0, example, ner_information, db_value_finder, is_training=False)
 
@@ -121,12 +122,22 @@ def get_schema_hack_zurich():
 
     return schemas_raw, schemas_dict, schema_path
 
+def get_schema_world_cup():
+    base_path = Path(Config.DATA_PREFIX) / 'world_cup_data_v2'
+    schema_path = str(base_path / 'tables.json')
+
+    schemas_raw, schemas_dict = spider_utils.load_schema(schema_path)
+
+    return schemas_raw, schemas_dict, schema_path
+
 
 def get_data_folder_by_database(database_name):
     if database_name == 'cordis_temporary' or database_name == 'cordis':
         return 'cordis'
     if database_name == 'hack_zurich':
         return 'hack_zurich'
+    if database_name == 'world_cup_data_v2':
+        return 'world_cup_data_v2'
     else:
         return 'spider'
 

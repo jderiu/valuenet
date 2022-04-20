@@ -91,8 +91,7 @@ def lookup_database(example, ner_information, columns, question_tokens, column_m
     As as input we use the entities extracted by the NER and then boil it down with the help of the base data (database).
     """
 
-    potential_value_candidates = pre_process_ner_candidates(ner_information['entities'], example['question'],
-                                                            example['question_toks'])
+    potential_value_candidates = pre_process_ner_candidates(ner_information['entities'], example['question'], example['question_toks'])
 
     # Here we use the power of the base-data: if we find a potential value in the database, we mark the column we found the value in with a "full value match".
     # TODO: also use the information on table level

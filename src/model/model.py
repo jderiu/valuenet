@@ -234,8 +234,7 @@ class IRNet(BasicModel):
         # we then simply sum the loss up for all sketch-actions in an example, so we have a simple array of 64 (batch size) sketch losses.
         # Technically:
         # we do a sum(log()) over all action-probabilities of a sample (the loop is only to get over all samples of a batch).
-        sketch_prob_var = torch.stack(
-            [torch.stack(action_probs_i, dim=0).log().sum() for action_probs_i in action_probs], dim=0)
+        sketch_prob_var = torch.stack([torch.stack(action_probs_i, dim=0).log().sum() if len(action_probs_i) > 0 else torch.tensor(0.0) for action_probs_i in action_probs], dim=0)
 
         ####################### PART 2: Create Schema (Column & Table) Embeddings ###########################################
         # What we see here in the next few lines is actually the schema encoder as described in IRNet
@@ -434,8 +433,7 @@ class IRNet(BasicModel):
             att_tm1 = att_t
 
         # same as above for sketch_prob_var: we sum up the loss per sample.
-        lf_prob_var = torch.stack(
-            [torch.stack(action_probs_i, dim=0).log().sum() for action_probs_i in action_probs], dim=0)
+        lf_prob_var = torch.stack([torch.stack(action_probs_i, dim=0).log().sum() if len(action_probs_i) > 0 else torch.tensor(0.0) for action_probs_i in action_probs], dim=0)
 
         return [sketch_prob_var, lf_prob_var]
 

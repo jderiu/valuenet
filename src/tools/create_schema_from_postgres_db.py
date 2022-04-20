@@ -3,7 +3,7 @@ import json
 
 import psycopg2
 
-from tools.create_schema_from_sqlite_db import convert_fk_index
+from src.tools.create_schema_from_sqlite_db import convert_fk_index
 
 
 def map_data_type(column_type) -> str:
@@ -14,6 +14,8 @@ def map_data_type(column_type) -> str:
         return 'number'
     if 'boolean' in column_type:
         return 'boolean'
+    if 'timestamp without time zone' in column_type:
+        return 'number'
 
     raise ValueError(f'Unknown column type {column_type}. Please implement first.')
 

@@ -69,6 +69,7 @@ def read_arguments_train():
     parser.add_argument('--clip_grad', default=5., type=float)
     parser.add_argument('--loss_epoch_threshold', default=50, type=int)
     parser.add_argument('--sketch_loss_weight', default=1.0, type=float)
+    parser.add_argument('--model_to_load', type=str, default=None)
 
     parser.add_argument('--run_spider_evaluation_after_epoch', action='store_true', default=False,
                         help='Run evaluation on the spider test suite after each epoch. If false, only accuracy/sketch_accuracy on the SemQL result is calculated.')
@@ -139,7 +140,7 @@ def read_arguments_manual_inference():
     # manual_inference
     parser.add_argument('--model_to_load', type=str)
     parser.add_argument('--api_key', default='1234', type=str)
-    parser.add_argument('--ner_api_secret', default='PLEASE_ADD_YOUR_OWN_GOOGLE_API_KEY_HERE', type=str)
+    parser.add_argument('--ner_api_secret', default='AIzaSyANLwzE3xtaz7TRPVBXcT8DBlQ7LOqucUI', type=str)
 
     # database configuration (in case of PostgreSQL, not needed for sqlite)
     _add_postgresql_configuration(parser)

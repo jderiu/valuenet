@@ -68,7 +68,12 @@ class Batch(object):
 
         if examples[0].semql_actions:
             self.max_action_num = max(len(e.semql_actions) for e in self.examples)
+        else:
+            self.max_action_num = 0
+        if examples[0].sketch:
             self.max_sketch_num = max(len(e.sketch) for e in self.examples)
+        else:
+            self.max_sketch_num = 0
 
         self.all_question_tokens = [e.question_tokens for e in self.examples]
         # the +1 represents the extra separator token after the end of the question. Not sure yet it is really necessary.

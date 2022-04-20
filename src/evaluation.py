@@ -21,8 +21,6 @@ import src.spider.test_suite_eval.evaluation as spider_evaluation
 
 
 def evaluate(model, dev_loader, schema, beam_size):
-    model.eval()
-
     sketch_correct, rule_label_correct, found_in_beams, not_all_values_found, total = 0, 0, 0, 0, 0
     predictions = []
     for batch in tqdm(dev_loader, desc="Evaluating"):
