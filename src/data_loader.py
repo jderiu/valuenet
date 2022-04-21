@@ -104,6 +104,10 @@ class CurriculumIterator():
         current_sample_id = random.sample(current_box, 1)[0]
         return current_sample_id
 
+    def get_box_distribution(self):
+        box_probs = np.array([len(b) for b in self.boxes])
+        return box_probs
+
     def update_sample(self, sample_id, is_correct):
         if is_correct:
             box_id = self.sample_id_to_box[sample_id]
@@ -121,5 +125,7 @@ class CurriculumIterator():
             self.boxes[box_id].remove(sample_id)
             self.boxes[box_id - 1].add(sample_id)
             self.sample_id_to_box[sample_id] = box_id - 1
-        if len(self.boxes[0]) == 0:
+
+        n_samples_in_pool = sum([len(b) for b in self.boxes])
+        if len(self.boxes[0]) < n_samples_in_pool*0.25:
             self.update_difficulty()

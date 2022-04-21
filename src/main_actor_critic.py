@@ -108,17 +108,19 @@ if __name__ == '__main__':
         train_loader.update_sample(sample_id, reward==1)
         if ac_loss is None:
             continue
-
+        bos_distr = train_loader.get_box_distribution()
+        bin_nr = [i for i in range(len(train_loader.boxes) + 1)]
         wandb.log(
             {
                 'train/ac_loss': float(ac_loss),
                 'train/loss': float(loss),
                 'train/reward': float(reward),
+                'train/box_distr:': wandb.Histogram(np_histogram=(bos_distr, bin_nr))
             }
         )
 
         train_time = t.tocvalue()
-
+        log_dict = {}
         if step % normal_eval_steps == 0 and step > 0:
             with torch.no_grad():
                 sketch_acc, acc, _, predictions = evaluate(
@@ -144,7 +146,9 @@ if __name__ == '__main__':
             with open(os.path.join(output_path, "eval_results.log"), "a+", encoding='utf-8') as writer:
                 writer.write(eval_results_string + "\n")
             scheduler.step()  # Update learning rate schedule
-            wandb.log({"eval/sketch-accuracy": sketch_acc, "eval/accuracy": acc})
+            log_dict['eval/sketch_acc'] = sketch_acc
+            log_dict['eval/acc'] = acc
+            #andb.log({"eval/sketch-accuracy": sketch_acc, "eval/accuracy": acc})
 
         if step % spider_eval_steps == 0 and step > 0:
             total_transformed, fail_transform, spider_eval_results = transform_to_sql_and_evaluate_with_spider(
@@ -156,13 +160,12 @@ if __name__ == '__main__':
 
             tqdm.write("Successfully transformed {} of {} from SemQL to SQL.".format(total_transformed - fail_transform, total_transformed))
             tqdm.write("Results from Spider-Evaluation:")
-            log_dict = {}
+
             for key, value in spider_eval_results.items():
                 tqdm.write("{}: {}".format(key, value))
-                log_dict = {
-                    f'spider_eval/{key}': value
-                }
+                log_dict[f'spider_eval/{key}'] = value
 
+        if len(log_dict) > 0:
             wandb.log(log_dict)
 
 
