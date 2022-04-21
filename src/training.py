@@ -152,9 +152,9 @@ def train_step_actor_critic(
                 db_names_to_schema[db_name],
                 kmaps
             )
-            reward = -1.0 if eval_results['exact'] == 0 else 1.0
-            #reward = sum([v['acc'] for k, v in eval_results['partial'].items()])/len(eval_results['partial'])
-            #reward = 2*reward - 1
+            #reward = -1.0 if eval_results['exact'] == 0 else 1.0
+            reward = sum([v['acc'] for k, v in eval_results['partial'].items()])/len(eval_results['partial'])
+            reward = 2*reward - 1
         except Exception as e:
             sql = ''
             reward = -1.0
