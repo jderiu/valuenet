@@ -51,7 +51,7 @@ if __name__ == '__main__':
     model = IRNet(args, device, grammar)
     model.to(device)
     if args.model_to_load is not None:
-        model.load_state_dict(torch.load(args.model_to_load))
+        model.load_state_dict(torch.load(args.model_to_load), strict=False)
         print("Load pre-trained model from '{}'".format(args.model_to_load))
 
     # track the model
@@ -61,6 +61,11 @@ if __name__ == '__main__':
 
     num_train_steps = len(train_loader) * args.num_epochs
     optimizer, scheduler = build_optimizer_encoder(model,
+                                                   num_train_steps,
+                                                   args.lr_transformer, args.lr_connection, args.lr_base,
+                                                   args.scheduler_gamma)
+
+    val_optimizer, val_scheduler = build_optimizer_encoder(model,
                                                    num_train_steps,
                                                    args.lr_transformer, args.lr_connection, args.lr_base,
                                                    args.scheduler_gamma)
@@ -95,6 +100,7 @@ if __name__ == '__main__':
             db_names_to_schema,
             model,
             optimizer,
+            val_optimizer,
             args.clip_grad,
             sketch_loss_weight=args.sketch_loss_weight)
         train_loader.update_sample(sample_id, reward==1)

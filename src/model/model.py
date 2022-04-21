@@ -101,6 +101,7 @@ class IRNet(BasicModel):
         nn.init.xavier_normal_(self.type_embed.weight.data)
         nn.init.xavier_normal_(self.N_embed.weight.data)
         print('Use Column Pointer: ', True if self.use_column_pointer else False)
+        self.value_function = nn.Linear(self.encoder.encoder_hidden_size, 1)
 
     def forward(self, examples):
         args = self.args
@@ -937,6 +938,22 @@ class IRNet(BasicModel):
             return (h_t, cell_t), att_t, alpha_t
         else:
             return (h_t, cell_t), att_t
+
+    def value_function_forward(self, examples):
+        args = self.args
+        # now should implement the examples
+        # "grammar" is the SemQL language. It contains lookup tables (string to id <--> id to string)
+        batch = Batch(examples, self.grammar, cuda=self.args.cuda)
+
+        # We use our transformer encoder to encode question together with the schema (columns and tables). See "TransformerEncoder" for details
+        question_encodings, column_encodings, table_encodings, value_encodings, transformer_pooling_output, question_token_lengths = self.encoder(
+            batch.all_question_tokens,
+            batch.all_column_tokens,
+            batch.all_table_names,
+            batch.values)
+
+        predicted_value = self.value_function(transformer_pooling_output)
+        return predicted_value
 
     def init_decoder_state(self, enc_last_cell):
         h_0 = self.decoder_cell_init(enc_last_cell)
