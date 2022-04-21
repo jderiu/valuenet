@@ -123,7 +123,8 @@ def train_step_actor_critic(
         val_optimizer,
         clip_grad,
         sketch_loss_weight=1,
-        lf_loss_weight=1
+        lf_loss_weight=1,
+        beam_size=15,
 ):
     original_row = copy.deepcopy(data_row)
     try:
@@ -134,7 +135,7 @@ def train_step_actor_critic(
 
     with torch.no_grad():
         for _ in range(15):
-            results = model.parse(example, beam_size=15)
+            results = model.parse(example, beam_size=beam_size)
             if len(results[1]) > 0:
                 break
     if len(results[1]) == 0:

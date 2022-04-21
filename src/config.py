@@ -71,6 +71,7 @@ def read_arguments_train():
     parser.add_argument('--sketch_loss_weight', default=1.0, type=float)
     parser.add_argument('--model_to_load', type=str, default=None)
     parser.add_argument('--pretrain_epochs', type=int, default=0)
+    parser.add_argument('--eval_every_n_steps', type=int, default=1000)
 
     parser.add_argument('--run_spider_evaluation_after_epoch', action='store_true', default=False,
                         help='Run evaluation on the spider test suite after each epoch. If false, only accuracy/sketch_accuracy on the SemQL result is calculated.')

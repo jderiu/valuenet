@@ -85,8 +85,8 @@ if __name__ == '__main__':
 
 
     n_steps = int(args.num_epochs * len(train_loader))
-    normal_eval_steps = len(train_loader)
-    spider_eval_steps = len(train_loader)
+    normal_eval_steps = args.eval_every_n_steps
+    spider_eval_steps =  args.eval_every_n_steps
     print("Start training with {} epochs".format(args.num_epochs))
     t = TicToc()
     for step in tqdm(range(n_steps)):
@@ -102,7 +102,9 @@ if __name__ == '__main__':
             optimizer,
             val_optimizer,
             args.clip_grad,
-            sketch_loss_weight=args.sketch_loss_weight)
+            sketch_loss_weight=args.sketch_loss_weight,
+            beam_size=args.beam_size
+        )
         train_loader.update_sample(sample_id, reward==1)
         if ac_loss is None:
             continue
