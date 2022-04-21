@@ -1,4 +1,6 @@
 import torch, random
+from scipy.special import softmax
+import numpy as np
 from torch.utils.data import RandomSampler
 from src.spider.test_suite_eval.evaluation import Evaluator, convert_sql_to_dict
 
@@ -89,14 +91,11 @@ class CurriculumIterator():
             entry['id'] = i
 
     def compute_box_probas(self):
-        n_non_empty = len([0 for x in self.boxes if len(x) > 0])
-        box_probs = [0.0 for x in self.boxes]
-        if n_non_empty == 1:
-            box_probs[0] = 1.0
-        else:
-            for i in range(0, n_non_empty - 1):
-                box_probs[i] = 0.5 ** (i + 1)
-            box_probs[n_non_empty - 1] = 1.0 - sum(box_probs)
+        box_probs = [0.5**i for i in range(1, len(self.boxes))]
+        box_probs.append(1 - sum(box_probs))
+        box_probs = np.array([x if len(b) > 0 else 0.0 for x, b in zip(box_probs, self.boxes)])
+        box_probs = box_probs /box_probs.sum()
+
         return box_probs
 
     def sample_next(self):

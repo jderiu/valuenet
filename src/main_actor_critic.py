@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     global_step = 0
     best_acc = 0.0
-    pretrain_epochs = 1
+    pretrain_epochs = args.pretrain_epochs
     for epoch in tqdm(range(pretrain_epochs), desc='Pretrain Decoder'):
         sketch_loss_weight = 1 if epoch < args.loss_epoch_threshold else args.sketch_loss_weight
         pretrain_decoder(global_step,
