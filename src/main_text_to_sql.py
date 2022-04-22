@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     # track the model
     #wandb.watch(model, log='parameters')
-    eval_steps = 1000
+    eval_steps = 1
     nocuda = not str(device) == 'cuda'
     train_args = TrainingArguments(
         output_dir=output_path,
@@ -110,9 +110,8 @@ if __name__ == '__main__':
         per_device_eval_batch_size=args.batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         num_train_epochs=args.num_epochs,
-        evaluation_strategy="steps",
+        evaluation_strategy="epoch",
         eval_accumulation_steps=args.batch_size,
-        eval_steps=2,
         no_cuda=nocuda,
         fp16=True,
         save_strategy="epoch",
