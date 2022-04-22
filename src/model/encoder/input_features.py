@@ -92,7 +92,7 @@ def _tokenize_values(values, tokenizer):
 
     for value in values:
         value = format_value(value)
-        value = tokenizer(value, is_split_into_words=True)
+        value = tokenizer([value], is_split_into_words=True)
         value_ids = value.data['input_ids']
 
         # why the [1:]? We saw in experiments with the tokenizer that the bos_token does not appear in the second tokenization when

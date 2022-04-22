@@ -1,8 +1,8 @@
 import torch, random
-from scipy.special import softmax
 import numpy as np
 from torch.utils.data import RandomSampler
 from src.spider.test_suite_eval.evaluation import Evaluator, convert_sql_to_dict
+
 
 def get_data_loader(data_train, data_dev, batch_size, shuffle_train=True, shuffle_dev=False) -> (torch.utils.data.DataLoader, torch.utils.data.DataLoader):
     train_loader = torch.utils.data.DataLoader(

@@ -6,7 +6,7 @@ import  src.neural_network_utils as nn_utils
 
 class Example:
     def __init__(self, question_tokens, semql_actions=None, column_tokens=None, n_columns=None, sql=None, column_matches=None,
-                 tables=None, n_tables=None, column_table_dict=None, columns=None, columns_per_table=None, values=None):
+                 tables=None, n_tables=None, column_table_dict=None, columns=None, columns_per_table=None, values=None, question=None):
         """
 
         @param question_tokens: [['what'], ['are'], ['column', 'name'], ['of'], ['state'], ['where'], ['at'], ['least'], ['value', '3'], ['table', 'head'], ['were'], ['born'], ['?']]
@@ -34,6 +34,7 @@ class Example:
         self.columns_per_table = columns_per_table
         self.semql_actions = semql_actions
         self.values = values
+        self.question = question
 
         self.sketch = list()
         if self.semql_actions:

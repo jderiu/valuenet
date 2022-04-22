@@ -59,6 +59,36 @@ def build_example(sql, all_schemas):
     return example
 
 
+def build_sql2text_example(sql, all_schemas):
+    # Schema contains detailed information about that database, especially tables & columns, as well as PK/FK relations.
+    schema = all_schemas[sql['db_id']]
+
+    column_matches = build_column_matches_array(sql['column_matches'])
+
+    column_names, column_set, column_table_dict, columns_per_table, table_names = build_table_column_mappings(sql, schema)
+
+    actions = _instantiate_actions(column_table_dict, sql)
+
+    example = Example(
+        question_tokens=[[token] for token in sql['query_toks']],
+        n_columns=len(column_set),
+        column_tokens=column_set,
+        sql=sql['query'],
+        column_matches=column_matches,
+        tables=table_names,
+        n_tables=len(table_names),
+        column_table_dict=column_table_dict,
+        columns=column_names,
+        columns_per_table=columns_per_table,
+        semql_actions=actions,
+        question=sql['question'],
+        values=sql['values']
+    )
+    example.sql_json = copy.deepcopy(sql)
+
+    return example
+
+
 def build_table_column_mappings(sql, table):
     _, table_names = lemmatize_list(table['table_names'])
 

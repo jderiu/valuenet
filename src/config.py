@@ -21,6 +21,7 @@ def _add_model_configuration(parser):
 
     # language model configuration
     parser.add_argument('--encoder_pretrained_model', default='facebook/bart-base', type=str)
+    parser.add_argument('--decoder_pretrained_model', default='facebook/bart-base', type=str)
     parser.add_argument('--max_seq_length', default=1024, type=int)
 
     # model configuration
@@ -58,6 +59,7 @@ def read_arguments_train():
 
     # training & optimizer configuration
     parser.add_argument('--batch_size', default=1, type=int)
+    parser.add_argument('--gradient_accumulation_steps', default=1, type=int)
     parser.add_argument('--num_epochs', default=5.0, type=float)
 
     parser.add_argument('--lr_base', default=1e-3, type=float)

@@ -1,0 +1,24 @@
+{
+    "os": "Windows-10-10.0.19041-SP0",
+    "python": "3.7.11",
+    "heartbeatAt": "2022-04-22T09:32:56.972491",
+    "startedAt": "2022-04-22T09:32:54.222136",
+    "docker": null,
+    "gpu": "Quadro P2000",
+    "gpu_count": 1,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "F:/01Text2SQL/valuenet/src/main_text_to_sql.py",
+    "codePath": "src\\main_text_to_sql.py",
+    "git": {
+        "remote": "git@github.com:jderiu/valuenet.git",
+        "commit": "bf4e171faabe843e99222091df78f756174b7668"
+    },
+    "email": null,
+    "root": "F:/01Text2SQL/valuenet",
+    "host": "clt-dsk-t-6210",
+    "username": "deri",
+    "executable": "C:\\Users\\deri.CLT-DSK-T-6210\\anaconda3\\envs\\aj-test\\python.exe"
+}
