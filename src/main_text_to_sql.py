@@ -1,3 +1,5 @@
+import os.path
+
 from transformers.trainer_seq2seq import Trainer
 from transformers.training_args_seq2seq import TrainingArguments
 
@@ -25,8 +27,10 @@ def postprocess_text(preds, labels):
 
     return preds, labels
 
+n_output = 1
 
 def compute_metrics(eval_preds):
+    global n_output
     preds, labels = eval_preds
     if isinstance(preds, tuple):
         preds = preds[0]
@@ -44,6 +48,12 @@ def compute_metrics(eval_preds):
     prediction_lens = [np.count_nonzero(pred != decoder_tokenizer.pad_token_id) for pred in preds]
     result["gen_len"] = np.mean(prediction_lens)
     result = {k: round(v, 4) for k, v in result.items()}
+    out_n = int(n_output*eval_steps)
+    with open(os.path.join(output_path, f'results_{out_n}.txt'), 'wt', encoding='utf-8') as f:
+        f.write(f'BLEU: {result["bleu"]}\n')
+        for pred, label in zip(decoded_preds, decoded_labels):
+            f.write(f"{pred}\t{label[0]}\n")
+    n_output += 1
     return result
 
 
@@ -82,7 +92,7 @@ if __name__ == '__main__':
 
     # track the model
     wandb.watch(model, log='parameters')
-
+    eval_steps = 1000
     nocuda = not device == 'cuda'
     train_args = TrainingArguments(
         output_dir=output_path,
@@ -90,13 +100,14 @@ if __name__ == '__main__':
         overwrite_output_dir=True,
         do_train=True,
         do_eval=True,
+        save_total_limit=2,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         num_train_epochs=args.num_epochs,
         evaluation_strategy="steps",
         eval_accumulation_steps=args.batch_size,
-        eval_steps=1000,
+        eval_steps=eval_steps,
         no_cuda=nocuda,
         fp16=True and not nocuda,
         save_strategy="epoch",
