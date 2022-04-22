@@ -77,7 +77,7 @@ if __name__ == '__main__':
     encoder_tokenizer = AutoTokenizer.from_pretrained(args.encoder_pretrained_model, add_prefix_space=True)
     decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model)
     if decoder_tokenizer.pad_token_id is None:
-        decoder_tokenizer.pad_token_id = decoder_tokenizer.eos_token_id
+        decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
     model = EncoderDecoderModel.from_encoder_decoder_pretrained(
         args.encoder_pretrained_model, args.decoder_pretrained_model
     )
