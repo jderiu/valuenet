@@ -113,7 +113,7 @@ if __name__ == '__main__':
         evaluation_strategy="epoch",
         eval_accumulation_steps=args.batch_size,
         no_cuda=nocuda,
-        fp16=True and not nocuda,
+        fp16=True,
         save_strategy="epoch",
         ignore_data_skip=True,
         logging_steps=10,
