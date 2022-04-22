@@ -81,6 +81,11 @@ if __name__ == '__main__':
     )
     model.to(device)
 
+    pytorch_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    pytorch_total_params = sum(p.numel() for p in model.parameters())
+    perc = 100 * (pytorch_trainable_params / pytorch_total_params)
+    print(f'Training {pytorch_trainable_params} out of {pytorch_total_params} parameters ({perc})!')
+
     data_collator = DataCollatorForSQL2Text(
         encoder_tokenizer=encoder_tokenizer,
         decoder_tokenizer=decoder_tokenizer,
@@ -91,7 +96,7 @@ if __name__ == '__main__':
     )
 
     # track the model
-    wandb.watch(model, log='parameters')
+    #wandb.watch(model, log='parameters')
     eval_steps = 1000
     nocuda = not device == 'cuda'
     train_args = TrainingArguments(
