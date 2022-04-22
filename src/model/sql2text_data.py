@@ -52,12 +52,11 @@ class DataCollatorForSQL2Text:
             return_tensors="pt"
         )
 
-
         out_batch = {
             "input_ids": input_ids_tensor,
             "attention_mask": attention_mask_tensor,
             "labels": labels.data['input_ids'].to(self.device),
-            "return_dict": False
+            "return_dict": True
         }
 
         # prepare decoder_input_ids
