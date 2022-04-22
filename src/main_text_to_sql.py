@@ -129,7 +129,7 @@ if __name__ == '__main__':
         args=train_args,
         data_collator=data_collator,
         train_dataset=sql_data,
-        eval_dataset=val_sql_data[:10],
+        eval_dataset=val_sql_data,
         compute_metrics=compute_metrics
     )
 
