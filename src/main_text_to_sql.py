@@ -98,7 +98,7 @@ if __name__ == '__main__':
     # track the model
     #wandb.watch(model, log='parameters')
     eval_steps = 1000
-    nocuda = not device == 'cuda'
+    nocuda = not str(device) == 'cuda'
     train_args = TrainingArguments(
         output_dir=output_path,
         logging_dir=output_path,
