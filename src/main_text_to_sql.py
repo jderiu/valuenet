@@ -4,7 +4,7 @@ from transformers.trainer_seq2seq import Trainer
 from transformers.training_args_seq2seq import TrainingArguments
 
 from transformers import AutoTokenizer
-from transformers.models.encoder_decoder import EncoderDecoderModel
+from src.model.encoder_decoder.modeling_encoder_decoder import EncoderDecoderModel
 from transformers import SchedulerType
 import numpy as np
 from datasets import load_metric
