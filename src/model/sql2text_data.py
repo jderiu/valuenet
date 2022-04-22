@@ -1,3 +1,4 @@
+import torch
 from transformers import PreTrainedTokenizer
 from src.spider.example import Batch
 from src.spider.example_builder import build_sql2text_example
@@ -5,6 +6,8 @@ from src.model.encoder.input_features import encode_input
 
 
 class DataCollatorForSQL2Text:
+    label_pad_token_id: int = -100
+
     def __init__(
             self,
             encoder_tokenizer: PreTrainedTokenizer,
@@ -44,18 +47,30 @@ class DataCollatorForSQL2Text:
                                                                               self.device)
 
         questions = [example.question for example in examples]
-        labels = self.decoder_tokenizer(
+        # labels = self.decoder_tokenizer(
+        #     questions,
+        #     padding=True,
+        #     truncation=True,
+        #     max_length=self.decoder_tokenizer.model_max_length,
+        #     return_tensors="pt"
+        # )
+
+        labels_vanilla = self.decoder_tokenizer(
             questions,
-            padding=True,
             truncation=True,
             max_length=self.decoder_tokenizer.model_max_length,
-            return_tensors="pt"
-        )
+        )['input_ids']
+
+        max_label_length = max(len(l) for l in labels_vanilla)
+        for van_label in labels_vanilla:
+            remainder = [self.label_pad_token_id] * (max_label_length - len(van_label))
+            van_label.extend(remainder)
+        labels = torch.tensor(labels_vanilla, dtype=torch.long, device=self.device)
 
         out_batch = {
             "input_ids": input_ids_tensor,
             "attention_mask": attention_mask_tensor,
-            "labels": labels.data['input_ids'].to(self.device),
+            "labels": labels,
             "return_dict": True
         }
 
