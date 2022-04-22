@@ -28,7 +28,7 @@ class DataCollatorForSQL2Text:
             self.model.config.decoder_start_token_id = self.decoder_tokenizer.bos_token_id
         else:
             self.model.config.decoder_start_token_id = self.decoder_tokenizer.eos_token_id
-            
+
         if self.decoder_tokenizer.pad_token_id is not None:
             self.model.config.pad_token_id = self.decoder_tokenizer.pad_token_id
         else:

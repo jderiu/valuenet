@@ -117,7 +117,7 @@ if __name__ == '__main__':
         save_strategy="epoch",
         ignore_data_skip=True,
         logging_steps=10,
-        learning_rate=3e-5,
+        learning_rate=args.lr_transformer,
         warmup_steps=100,
         dataloader_pin_memory=False,
         lr_scheduler_type=SchedulerType.LINEAR,
