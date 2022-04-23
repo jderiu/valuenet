@@ -57,8 +57,6 @@ def compute_metrics_decode_only(eval_preds):
     global n_output
     generator = pipeline('text-generation', model=model, tokenizer=decoder_tokenizer, device=0)
     preds, labels = eval_preds
-    if isinstance(preds, tuple):
-        preds = preds[0]
     #decoded_preds = decoder_tokenizer.batch_decode(preds.argmax(axis=2), skip_special_tokens=True)
     # Replace -100 in the labels as we can't decode them.
     labels = np.where(labels != -100, labels, decoder_tokenizer.pad_token_id)
@@ -166,7 +164,8 @@ if __name__ == '__main__':
         per_device_eval_batch_size=args.batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         num_train_epochs=args.num_epochs,
-        evaluation_strategy="epoch",
+        evaluation_strategy="steps",
+        eval_steps=10,
         eval_accumulation_steps=args.batch_size,
         no_cuda=nocuda,
         fp16=True,
@@ -185,8 +184,8 @@ if __name__ == '__main__':
         args=train_args,
         data_collator=data_collator,
         train_dataset=sql_data,
-        eval_dataset=val_sql_data,
+        eval_dataset=val_sql_data[:10],
         compute_metrics=compute_metrics_decode_only
     )
 
-    trainer.train(ignore_keys_for_eval=['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions'])
+    trainer.train(ignore_keys_for_eval=['logits', 'past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions'])
