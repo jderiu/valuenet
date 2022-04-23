@@ -22,6 +22,7 @@ def _add_model_configuration(parser):
     # language model configuration
     parser.add_argument('--encoder_pretrained_model', default='facebook/bart-base', type=str)
     parser.add_argument('--decoder_pretrained_model', default='facebook/bart-base', type=str)
+    parser.add_argument('--gen_type', default='encoder_decoder', type=str)
     parser.add_argument('--max_seq_length', default=1024, type=int)
 
     # model configuration

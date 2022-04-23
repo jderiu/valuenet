@@ -2,7 +2,54 @@ import torch
 from transformers import PreTrainedTokenizer
 from src.spider.example import Batch
 from src.spider.example_builder import build_sql2text_example
-from src.model.encoder.input_features import encode_input
+from src.model.encoder.input_features import encode_input_sql2text, encode_input
+
+
+class DataCollartorForLMSQL2Text:
+    label_pad_token_id: int = -100
+
+    def __init__(
+            self,
+            tokenizer: PreTrainedTokenizer,
+            model,
+            grammar,
+            schema,
+            device
+    ):
+        self.tokenizer = tokenizer
+        self.schema = schema
+        self.grammar = grammar
+        self.device = device
+        self.model = model
+
+    def __call__(self, batch, return_tensors=None):
+        examples = []
+        for data_row in batch:
+            try:
+                example = build_sql2text_example(data_row, self.schema, is_decode_only=True)
+                examples.append(example)
+            except RuntimeError as e:
+                print("Exception while building example (training): {}".format(e))
+        batch = Batch(examples, self.grammar, cuda=self.device)
+
+        input_ids_tensor, attention_mask_tensor, input_lengths = encode_input_sql2text(
+            batch.all_question_tokens,
+            batch.all_query_tokens,
+            batch.all_column_tokens,
+            batch.all_table_names,
+            batch.values,
+            self.tokenizer,
+            self.tokenizer.model_max_length,
+            self.device
+        )
+
+        out_batch = {
+            "input_ids": input_ids_tensor,
+            "attention_mask": attention_mask_tensor,
+            "labels": input_ids_tensor,
+        }
+
+        return out_batch
 
 
 class DataCollatorForSQL2Text:

@@ -5,7 +5,15 @@ SEGMENT_ID_QUESTION = 0
 SEGMENT_ID_SCHEMA = 1
 
 
-def encode_input(question_spans, column_names, table_names, values, tokenizer, max_length_model, device):
+def encode_input(
+        question_spans,
+        column_names,
+        table_names,
+        values,
+        tokenizer,
+        max_length_model,
+        device
+):
     all_input_ids = []
     all_attention_mask = []
 
@@ -31,6 +39,63 @@ def encode_input(question_spans, column_names, table_names, values, tokenizer, m
         all_ids = question_token_ids + column_token_ids + table_token_ids + value_tokens_ids
         if len(all_ids) > max_length_model:
             print(f"################### ATTENTION! Example too long ({len(all_ids)}). Question-len: {len(question_token_ids)}, column-len:{len(column_token_ids)}, table-len: {len(table_token_ids)} value-len: {len(value_tokens_ids)}")
+            print(question)
+            print(columns)
+            print(tables)
+            print(values)
+
+        # not sure here if "tokenizer.mask_token_id" or just a simple 1...
+        attention_mask = [1] * len(all_ids)
+
+        all_input_ids.append(all_ids)
+        all_attention_mask.append(attention_mask)
+
+    max_length_data = max(map(lambda ids: len(ids), all_input_ids))
+
+    for input_ids, attention_mask in zip(all_input_ids, all_attention_mask):
+        _padd_input(input_ids, attention_mask, max_length_data, tokenizer)
+
+    input_ids_tensor = torch.tensor(all_input_ids, dtype=torch.long).to(device)
+    attention_mask_tensor = torch.tensor(all_attention_mask, dtype=torch.long).to(device)
+
+    return input_ids_tensor, attention_mask_tensor, (all_question_span_lengths, all_column_token_lengths, all_table_token_lengths, all_values_lengths)
+
+
+def encode_input_sql2text(
+        question_spans,
+        sql_spans,
+        column_names,
+        table_names,
+        values,
+        tokenizer,
+        max_length_model,
+        device
+):
+    all_input_ids = []
+    all_attention_mask = []
+
+    all_question_span_lengths = []
+    all_column_token_lengths = []
+    all_table_token_lengths = []
+    all_values_lengths = []
+    all_sql_span_lengths = []
+
+    for question, sql_query, columns, tables, val in zip(question_spans, sql_spans, column_names, table_names, values):
+        question_token_ids, question_span_lengths = _tokenize_question(question, tokenizer)
+        sql_token_ids, sql_span_lengths = _tokenize_question(sql_query, tokenizer)
+        column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer)
+        table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer)
+        value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer)
+
+        all_question_span_lengths.append(question_span_lengths)
+        all_sql_span_lengths.append(sql_span_lengths)
+        all_column_token_lengths.append(column_token_lengths)
+        all_table_token_lengths.append(table_token_lengths)
+        all_values_lengths.append(value_token_lengths)
+
+        all_ids = sql_token_ids + column_token_ids + table_token_ids + value_tokens_ids + question_token_ids
+        if len(all_ids) > max_length_model:
+            print(f"################### ATTENTION! Example too long ({len(all_ids)}). Question-len: {len(question_token_ids)}, SQL-len: {len(sql_token_ids)}, column-len:{len(column_token_ids)}, table-len: {len(table_token_ids)} value-len: {len(value_tokens_ids)}")
             print(question)
             print(columns)
             print(tables)

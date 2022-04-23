@@ -2,11 +2,11 @@ import copy
 
 from  src.intermediate_representation.semQL import C, T, A, V
 import  src.neural_network_utils as nn_utils
-
+from typing import List
 
 class Example:
     def __init__(self, question_tokens, semql_actions=None, column_tokens=None, n_columns=None, sql=None, column_matches=None,
-                 tables=None, n_tables=None, column_table_dict=None, columns=None, columns_per_table=None, values=None, question=None):
+                 tables=None, n_tables=None, column_table_dict=None, columns=None, columns_per_table=None, values=None, question=None, query_tokens=None):
         """
 
         @param question_tokens: [['what'], ['are'], ['column', 'name'], ['of'], ['state'], ['where'], ['at'], ['least'], ['value', '3'], ['table', 'head'], ['were'], ['born'], ['?']]
@@ -35,6 +35,7 @@ class Example:
         self.semql_actions = semql_actions
         self.values = values
         self.question = question
+        self.query_tokens = query_tokens
 
         self.sketch = list()
         if self.semql_actions:
@@ -64,7 +65,7 @@ class cached_property(object):
 
 
 class Batch(object):
-    def __init__(self, examples, grammar, cuda=False):
+    def __init__(self, examples: List[Example], grammar, cuda=False):
         self.examples = examples
 
         if examples[0].semql_actions:
@@ -77,6 +78,7 @@ class Batch(object):
             self.max_sketch_num = 0
 
         self.all_question_tokens = [e.question_tokens for e in self.examples]
+        self.all_query_tokens = [e.query_tokens for e in self.examples]
         # the +1 represents the extra separator token after the end of the question. Not sure yet it is really necessary.
         self.all_question_tokens_len = [len(e.question_tokens) + 1 for e in self.examples]
 
