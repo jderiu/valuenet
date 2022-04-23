@@ -70,8 +70,8 @@ def compute_metrics_decode_only(eval_preds):
     # decoder_tokenizer.batch_decode(model.generate(
     #     decoder_tokenizer([x.split('TEXT:')[0] + 'TEXT:' for x in decoded_labels], return_tensors='pt', padding=True)[
     #         'input_ids'].to(device)), skip_special_tokens=True)
-    n_decoding_steps = int(len(decoded_labels)/args.batch_size) + 1
-    for decoded_label_batch in tqdm(batch_list(decoded_labels, n=args.batch_size), desc="Decoding:", total=n_decoding_steps):
+    n_decoding_steps = int(len(decoded_labels)/args.eval_batch_size) + 1
+    for decoded_label_batch in tqdm(batch_list(decoded_labels, n=args.eval_batch_size), desc="Decoding:", total=n_decoding_steps):
         prefix_batch = [x.split('TEXT:')[0] + 'TEXT:' for x in decoded_label_batch]
         label_batch = [x.split('TEXT:')[1] for x in decoded_label_batch]
         prefix_batch_enc = decoder_tokenizer(prefix_batch, return_tensors='pt', padding=True)

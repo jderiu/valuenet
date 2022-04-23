@@ -60,6 +60,7 @@ def read_arguments_train():
 
     # training & optimizer configuration
     parser.add_argument('--batch_size', default=1, type=int)
+    parser.add_argument('--eval_batch_size', default=1, type=int)
     parser.add_argument('--gradient_accumulation_steps', default=1, type=int)
     parser.add_argument('--num_epochs', default=5.0, type=float)
 
