@@ -66,6 +66,7 @@ class DataCollatorForSQL2Text:
             questions,
             truncation=True,
             max_length=self.decoder_tokenizer.model_max_length,
+            add_special_tokens=False
         )['input_ids']
 
         max_label_length = max(len(l) for l in labels_vanilla)

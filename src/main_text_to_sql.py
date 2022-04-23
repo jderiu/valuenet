@@ -123,7 +123,7 @@ if __name__ == '__main__':
         warmup_steps=100,
         dataloader_pin_memory=False,
         lr_scheduler_type=SchedulerType.LINEAR,
-        label_smoothing_factor=0.0
+        label_smoothing_factor=0.1
     )
 
     trainer = Trainer(
