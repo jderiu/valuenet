@@ -76,7 +76,7 @@ def compute_metrics_decode_only(eval_preds):
         prefix_batch_enc = decoder_tokenizer(prefix_batch, return_tensors='pt', padding=True)
         decoded_out = model.generate(prefix_batch_enc['input_ids'].to(device))
         pred_batch = decoder_tokenizer.batch_decode(decoded_out, skip_special_tokens=True)
-        pred_batch_out = [x.split('TEXT:')[1] for x in pred_batch]
+        pred_batch_out = [x.split('TEXT:')[1].replace('\n','') for x in pred_batch]
 
         out_labels.extend(label_batch)
         out_preds.extend(pred_batch_out)
