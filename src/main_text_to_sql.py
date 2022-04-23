@@ -53,6 +53,11 @@ def compute_metrics(eval_preds):
     n_output += 1
     return result
 
+def batch_list(iterable, n=1):
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield iterable[ndx:min(ndx + n, l)]
+
 def compute_metrics_decode_only(eval_preds):
     global n_output
     generator = pipeline('text-generation', model=model, tokenizer=decoder_tokenizer, device=0)
@@ -62,18 +67,19 @@ def compute_metrics_decode_only(eval_preds):
     labels = np.where(labels != -100, labels, decoder_tokenizer.pad_token_id)
     decoded_labels = decoder_tokenizer.batch_decode(labels, skip_special_tokens=True)
     out_labels, out_preds = [], []
-    for decoded_label in tqdm(decoded_labels, desc="Decoding:"):
-        prefix = decoded_label.split('TEXT:')[0]
-        label = decoded_label.split('TEXT:')[1]
-        ret = generator(
-            prefix + 'TEXT:',
-            max_length=labels.shape[1] + 32,
-            num_return_sequences=1,
-            pad_token_id=decoder_tokenizer.eos_token_id
-        )[0]['generated_text']
-        pred = ret.split('TEXT:')[1].replace('\n', '')
-        out_labels.append(label)
-        out_preds.append(pred)
+    # decoder_tokenizer.batch_decode(model.generate(
+    #     decoder_tokenizer([x.split('TEXT:')[0] + 'TEXT:' for x in decoded_labels], return_tensors='pt', padding=True)[
+    #         'input_ids'].to(device)), skip_special_tokens=True)
+    for decoded_label_batch in tqdm(batch_list(decoded_labels, n=args.batch_size), desc="Decoding:"):
+        prefix_batch = [x.split('TEXT:')[0] + 'TEXT:' for x in decoded_label_batch]
+        label_batch = [x.split('TEXT:')[1] for x in decoded_label_batch]
+        prefix_batch_enc = decoder_tokenizer(prefix_batch, return_tensors='pt', padding=True)
+        decoded_out = model.generate(prefix_batch_enc['input_ids'].to(device))
+        pred_batch = decoder_tokenizer.batch_decode(decoded_out, skip_special_tokens=True)
+        pred_batch_out = [x.split('TEXT:')[1] for x in pred_batch]
+
+        out_labels.extend(label_batch)
+        out_preds.extend(pred_batch_out)
     # Some simple post-processing
     decoded_preds, decoded_labels = postprocess_text(out_preds, out_labels)
 
@@ -130,6 +136,7 @@ if __name__ == '__main__':
         )
     else:
         decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model, add_prefix_space=True)
+        decoder_tokenizer.padding_side = 'left'
         if decoder_tokenizer.pad_token_id is None:
             decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
         if decoder_tokenizer.sep_token_id is None:
