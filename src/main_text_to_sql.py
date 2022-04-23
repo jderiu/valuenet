@@ -14,7 +14,7 @@ from src.intermediate_representation import semQL
 from src.spider import spider_utils
 from src.utils import setup_device, set_seed_everywhere, create_experiment_folder
 from src.model.sql2text_data import DataCollatorForSQL2Text, DataCollartorForLMSQL2Text
-
+from tqdm import tqdm
 metric = load_metric("sacrebleu")
 # initialize experiment tracking @ Weights & Biases
 import wandb
@@ -62,12 +62,12 @@ def compute_metrics_decode_only(eval_preds):
     labels = np.where(labels != -100, labels, decoder_tokenizer.pad_token_id)
     decoded_labels = decoder_tokenizer.batch_decode(labels, skip_special_tokens=True)
     out_labels, out_preds = [], []
-    for decoded_label in decoded_labels:
+    for decoded_label in tqdm(decoded_labels, desc="Decoding:"):
         prefix = decoded_label.split('TEXT:')[0]
         label = decoded_label.split('TEXT:')[1]
         ret = generator(
             prefix + 'TEXT:',
-            max_length=100,
+            max_length=512,
             num_return_sequences=1,
             pad_token_id=decoder_tokenizer.eos_token_id
         )[0]['generated_text']
