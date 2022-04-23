@@ -189,4 +189,4 @@ if __name__ == '__main__':
         compute_metrics=compute_metrics_decode_only
     )
 
-    trainer.train(ignore_keys_for_eval=['past_key_values', 'encoder_last_hidden_state'])
+    trainer.train(ignore_keys_for_eval=['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions'])
