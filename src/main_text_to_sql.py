@@ -164,8 +164,7 @@ if __name__ == '__main__':
         per_device_eval_batch_size=args.batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         num_train_epochs=args.num_epochs,
-        evaluation_strategy="steps",
-        eval_steps=2,
+        evaluation_strategy="epoch",
         eval_accumulation_steps=args.batch_size,
         no_cuda=nocuda,
         fp16=True,
@@ -184,7 +183,7 @@ if __name__ == '__main__':
         args=train_args,
         data_collator=data_collator,
         train_dataset=sql_data,
-        eval_dataset=val_sql_data[:10],
+        eval_dataset=val_sql_data,
         compute_metrics=compute_metrics_decode_only
     )
 
