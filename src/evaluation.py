@@ -161,7 +161,7 @@ def main():
     model.to(device)
 
     # load the pre-trained parameters
-    model.load_state_dict(torch.load(args.model_to_load))
+    model.load_state_dict(torch.load(args.model_to_load), strict=False)
     print("Load pre-trained model from '{}'".format(args.model_to_load))
 
     sketch_acc, acc, not_all_values_found, predictions = evaluate(model,
