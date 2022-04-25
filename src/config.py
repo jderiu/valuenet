@@ -108,6 +108,7 @@ def read_arguments_evaluation():
     parser.add_argument('--evaluation_type', default='spider', type=str)
 
     parser.add_argument('--model_to_load', type=str)
+    parser.add_argument('--ir_model_to_load', type=str)
     parser.add_argument('--checkpoint', type=int)
     parser.add_argument('--prediction_dir', type=str)
     parser.add_argument('--batch_size', default=1, type=int)

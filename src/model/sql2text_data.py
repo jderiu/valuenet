@@ -1,9 +1,9 @@
-import torch
+import torch, copy
 from transformers import PreTrainedTokenizer
 from src.spider.example import Batch
-from src.spider.example_builder import build_sql2text_example
+from src.spider.example_builder import build_sql2text_example, build_example
 from src.model.encoder.input_features import encode_input_sql2text, encode_input
-
+from spacy.lang.en import English
 
 class DataCollartorForLMSQL2Text:
     label_pad_token_id: int = -100
@@ -142,3 +142,30 @@ class DataCollatorForSQL2Text:
 
         return out_batch
 
+
+class DataCollatorCycle():
+    def __init__(
+            self,
+            grammar,
+            schema,
+            device
+    ):
+        self.schema = schema
+        self.grammar = grammar
+        self.device = device
+        self.tokenizer = English().tokenizer
+
+    def __call__(self, batch, alt_question):
+        examples, original_rows = [], []
+        for i, (data_row, alt_question) in enumerate(batch, alt_question):
+            original_row = copy.deepcopy(data_row)
+            try:
+                if alt_question is not None:
+                    question_tokenized = self.tokenizer(alt_question)
+                    question_tokenized = [str(token) for token in question_tokenized]
+                    original_row['question_toks'] = question_tokenized
+                example = build_example(original_row, self.schema)
+                examples.append(example)
+            except RuntimeError as e:
+                print("Exception while building example (training): {}".format(e))
+        return examples, original_rows
