@@ -100,6 +100,7 @@ def evaluate_encode_decode(
         logging_path,
         checkpoint_nr=0
 ):
+    split_toks = ['.', '?', '!']
     out_labels, out_preds = [], []
     n_eval_steps = int(len(test_data) // args.batch_size) + 1
     for batch in tqdm(batch_list(test_data, args.batch_size), total=n_eval_steps):
@@ -115,6 +116,10 @@ def evaluate_encode_decode(
                 pad_token_id=tokenizer.pad_token_id,
             )
         pred_batch_out = tokenizer.batch_decode(generated_out, skip_special_tokens=True)
+        pred_batch_out = [x.replace('\n', '') for x in pred_batch_out]
+        for split_tok in split_toks: #ugly hack to avoid unending generation
+            pred_batch_out = [x.split(split_tok)[0] for x in pred_batch_out]
+
         labels = [x['question'] for x in batch]
         out_labels.extend(labels)
         out_preds.extend(pred_batch_out)
