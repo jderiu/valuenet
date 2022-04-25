@@ -245,7 +245,7 @@ def main():
     # do cycle consistency evaluation
     model = IRNet(args, device, grammar)
     model.to(device)
-    model.load_state_dict(torch.load(args.ir_model_to_load))
+    model.load_state_dict(torch.load(args.ir_model_to_load), strict=False)
 
     data_collator = DataCollatorCycle(
         grammar,
