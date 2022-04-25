@@ -449,7 +449,7 @@ def print_formated_s(row_name, l, element_format):
     print(template.format(row_name, *l))
 
 
-def print_scores(scores, etype, training_step, include_turn_acc=True):
+def print_scores(scores, etype, training_step, include_turn_acc=True, log_wandb=True):
     turns = ['turn 1', 'turn 2', 'turn 3', 'turn 4', 'turn > 4']
     levels = ['easy', 'medium', 'hard', 'extra', 'all']
     if include_turn_acc:
@@ -467,7 +467,8 @@ def print_scores(scores, etype, training_step, include_turn_acc=True):
         print_formated_s("execution", exec_scores, '{:<20.3f}')
 
         exec_accuracy = {level: scores[level]['exec'] for level in levels}
-        wandb.log(exec_accuracy, step=training_step)
+        if log_wandb:
+            wandb.log(exec_accuracy, step=training_step)
 
     if etype in ["all", "match"]:
         print ('\n====================== EXACT MATCHING ACCURACY =====================')
@@ -507,7 +508,19 @@ def print_scores(scores, etype, training_step, include_turn_acc=True):
 
     return exec_accuracy
 
-def evaluate(gold, predict, db_dir, etype, kmaps, plug_value, keep_distinct, progress_bar_for_each_datapoint, training_step, quickmode=False):
+def evaluate(
+        gold,
+        predict,
+        db_dir,
+        etype,
+        kmaps,
+        plug_value,
+        keep_distinct,
+        progress_bar_for_each_datapoint,
+        training_step,
+        quickmode=False,
+        log_wandb=True,
+):
 
     with open(gold) as f:
         glist = []
@@ -709,7 +722,7 @@ def evaluate(gold, predict, db_dir, etype, kmaps, plug_value, keep_distinct, pro
                         2.0 * scores[level]['partial'][type_]['acc'] * scores[level]['partial'][type_]['rec'] / (
                         scores[level]['partial'][type_]['rec'] + scores[level]['partial'][type_]['acc'])
 
-    return print_scores(scores, etype, training_step, include_turn_acc=include_turn_acc)
+    return print_scores(scores, etype, training_step, include_turn_acc=include_turn_acc, log_wandb=log_wandb)
 
 
 def convert_sql_to_dict(sql_str, schema):

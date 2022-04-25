@@ -274,7 +274,7 @@ def main():
         os.path.join(args.prediction_dir, 'ground_truth.txt'),
         os.path.join(args.prediction_dir, 'output.txt'),
         os.path.join(args.data_dir, "testsuite_databases"),
-        'exec', None, False, False, False, 1, quickmode=False)
+        'exec', None, False, False, False, 1, quickmode=False, log_wandb=False)
 
     sketch_acc, acc, not_all_values_found, predictions = cycle_eval(
         args,
@@ -295,7 +295,7 @@ def main():
         os.path.join(args.prediction_dir, 'ground_truth.txt'),
         os.path.join(args.prediction_dir, 'output.txt'),
         os.path.join(args.data_dir, "testsuite_databases"),
-        'exec', None, False, False, False, 1, quickmode=False)
+        'exec', None, False, False, False, 1, quickmode=False, log_wandb=False)
 
 
 if __name__ == '__main__':
