@@ -12,7 +12,7 @@ from src.config import read_arguments_evaluation
 from src.intermediate_representation import semQL
 from src.spider import spider_utils
 from src.utils import setup_device, set_seed_everywhere
-from src.model.sql2text_data import DataCollatorForSQL2Text, DataCollartorForLMSQL2Text
+from src.model.sql2text_data import DataCollatorForSQL2Text, DataCollartorForLMSQL2Text, DataCollatorCycle
 from tqdm import tqdm
 from src.model.model import IRNet
 import src.spider.test_suite_eval.evaluation as spider_evaluation
@@ -247,6 +247,13 @@ def main():
     model = IRNet(args, device, grammar)
     model.to(device)
     model.load_state_dict(torch.load(args.ir_model_to_load))
+
+    data_collator = DataCollatorCycle(
+        grammar,
+        table_data,
+        device
+    )
+
     sketch_acc, acc, not_all_values_found, predictions = cycle_eval(
         args,
         val_sql_data,
