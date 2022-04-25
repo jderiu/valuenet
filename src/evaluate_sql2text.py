@@ -53,6 +53,7 @@ def evaulate_decode_only(
                 num_beams=15,
                 repetition_penalty=2.5,
                 no_repeat_ngram_size=3,
+                pad_token_id=tokenizer.pad_token_id,
             )
         decoded_out = tokenizer.batch_decode(generated_out, skip_special_tokens=True)
         pred_batch_out = [x.split('TEXT:')[1].replace('\n', '') for x in decoded_out]
