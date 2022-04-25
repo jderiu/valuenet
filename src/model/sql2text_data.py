@@ -155,9 +155,9 @@ class DataCollatorCycle():
         self.device = device
         self.tokenizer = English().tokenizer
 
-    def __call__(self, batch, alt_question):
+    def __call__(self, batch, alt_questions):
         examples, original_rows = [], []
-        for i, (data_row, alt_question) in enumerate(zip(batch, alt_question)):
+        for i, (data_row, alt_question) in enumerate(zip(batch, alt_questions)):
             original_row = copy.deepcopy(data_row)
             try:
                 if alt_question is not None:
