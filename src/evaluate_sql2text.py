@@ -17,7 +17,9 @@ from src.spider import spider_utils
 from src.utils import setup_device, set_seed_everywhere, create_experiment_folder
 from src.model.sql2text_data import DataCollatorForSQL2Text, DataCollartorForLMSQL2Text
 from tqdm import tqdm
+
 metric = load_metric("sacrebleu")
+
 
 def postprocess_text(preds, labels):
     preds = [pred.strip() for pred in preds]
@@ -25,10 +27,49 @@ def postprocess_text(preds, labels):
 
     return preds, labels
 
+
 def batch_list(iterable, n=1):
     l = len(iterable)
     for ndx in range(0, l, n):
         yield iterable[ndx:min(ndx + n, l)]
+
+
+def evaluate_encode_decode(
+        args,
+        test_data,
+        data_collator,
+        model,
+        tokenizer,
+        logging_path,
+        checkpoint_nr=0
+):
+    out_labels, out_preds = [], []
+    n_eval_steps = int(len(test_data) // args.batch_size) + 1
+    for batch in tqdm(batch_list(test_data, args.batch_size), total=n_eval_steps):
+        preprocessed_batch = data_collator(batch)
+        with torch.no_grad():
+            generated_out = model.generate(
+                preprocessed_batch['input_ids'],
+                attention_mask=preprocessed_batch['attention_mask'],
+                max_length=preprocessed_batch['input_ids'].shape[1] + 32,
+                num_beams=15,
+                repetition_penalty=2.5,
+                no_repeat_ngram_size=3,
+                pad_token_id=tokenizer.pad_token_id,
+            )
+        pred_batch_out = tokenizer.batch_decode(generated_out, skip_special_tokens=True)
+        labels = [x['question'] for x in batch]
+        out_labels.extend(labels)
+        out_preds.extend(pred_batch_out)
+
+    decoded_preds, decoded_labels = postprocess_text(out_preds, out_labels)
+    result = metric.compute(predictions=decoded_preds, references=decoded_labels)
+    result = {"bleu": result["score"]}
+
+    with open(os.path.join(logging_path, f'results_final_{checkpoint_nr}.txt'), 'wt', encoding='utf-8') as f:
+        f.write(f'BLEU: {result["bleu"]}\n')
+        for pred, label in zip(decoded_preds, decoded_labels):
+            f.write(f"{pred}\t{label[0]}\n")
 
 
 def evaulate_decode_only(
@@ -42,14 +83,14 @@ def evaulate_decode_only(
 
 ):
     out_labels, out_preds = [], []
-    n_eval_steps = int(len(test_data)// args.batch_size) + 1
+    n_eval_steps = int(len(test_data) // args.batch_size) + 1
     for batch in tqdm(batch_list(test_data, args.batch_size), total=n_eval_steps):
         preprocessed_batch = data_collator(batch, is_eval=True)
         with torch.no_grad():
             generated_out = model.generate(
                 preprocessed_batch['input_ids'],
                 attention_mask=preprocessed_batch['attention_mask'],
-                max_length = preprocessed_batch['input_ids'].shape[1] + 32,
+                max_length=preprocessed_batch['input_ids'].shape[1] + 32,
                 num_beams=15,
                 repetition_penalty=2.5,
                 no_repeat_ngram_size=3,
@@ -70,6 +111,7 @@ def evaulate_decode_only(
         for pred, label in zip(decoded_preds, decoded_labels):
             f.write(f"{pred}\t{label[0]}\n")
 
+
 def main():
     args = read_arguments_evaluation()
 
@@ -85,13 +127,13 @@ def main():
 
     if train_args['gen_type'] == 'encoder_decoder':
         encoder_tokenizer = AutoTokenizer.from_pretrained(train_args['encoder_pretrained_model'], add_prefix_space=True)
-        decoder_tokenizer = AutoTokenizer.from_pretrained(train_args['decoder_pretrained_model'])
+        decoder_tokenizer = AutoTokenizer.from_pretrained('gpt2')
         if decoder_tokenizer.pad_token_id is None:
             decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
-        #model = EncoderDecoderModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
-        model = EncoderDecoderModel.from_encoder_decoder_pretrained(
-            train_args['encoder_pretrained_model'], train_args['decoder_pretrained_model']
-        )
+        model = EncoderDecoderModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
+        # model = EncoderDecoderModel.from_encoder_decoder_pretrained(
+        #     train_args['encoder_pretrained_model'], 'gpt2'
+        # )
         model.to(device)
 
         data_collator = DataCollatorForSQL2Text(
@@ -102,6 +144,17 @@ def main():
             schema=table_data,
             device=device
         )
+
+        evaluate_encode_decode(
+            args,
+            val_sql_data,
+            data_collator,
+            model,
+            decoder_tokenizer,
+            args.model_to_load,
+            args.checkpoint
+        )
+
     else:
         decoder_tokenizer = AutoTokenizer.from_pretrained(train_args['decoder_pretrained_model'], add_prefix_space=True)
         decoder_tokenizer.padding_side = 'left'
@@ -109,7 +162,7 @@ def main():
             decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
         if decoder_tokenizer.sep_token_id is None:
             decoder_tokenizer.sep_token = decoder_tokenizer.bos_token
-        #model = GPT2LMHeadModel.from_pretrained('gpt2')
+        # model = GPT2LMHeadModel.from_pretrained('gpt2')
         model = GPT2LMHeadModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
         model.to(device)
         data_collator = DataCollartorForLMSQL2Text(
@@ -132,6 +185,7 @@ def main():
 
     pytorch_total_params = sum(p.numel() for p in model.parameters())
     print(f'Number of Params: {pytorch_total_params}!')
+
 
 if __name__ == '__main__':
     main()
