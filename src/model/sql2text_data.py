@@ -120,6 +120,7 @@ class DataCollatorForSQL2Text:
         max_label_length = max(len(l) for l in labels_vanilla)
         for van_label in labels_vanilla:
             remainder = [self.label_pad_token_id] * (max_label_length - len(van_label))
+            van_label.append(self.decoder_tokenizer.eos_token_id)
             van_label.extend(remainder)
         labels = torch.tensor(labels_vanilla, dtype=torch.long, device=self.device)
 
