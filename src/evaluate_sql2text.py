@@ -21,7 +21,7 @@ metric = load_metric("sacrebleu")
 
 
 def postprocess_text(preds, labels):
-    preds = [pred.strip() for pred in preds]
+    preds = [pred.strip() if len(pred.strip) > 0 else 'What?' for pred in preds]
     labels = [[label.strip()] for label in labels]
 
     return preds, labels
@@ -296,7 +296,6 @@ def main():
         os.path.join(args.prediction_dir, 'output.txt'),
         os.path.join(args.data_dir, "testsuite_databases"),
         'exec', None, False, False, False, 1, quickmode=False, log_wandb=False)
-
 
 if __name__ == '__main__':
     main()
