@@ -21,7 +21,7 @@ metric = load_metric("sacrebleu")
 
 
 def postprocess_text(preds, labels):
-    preds = [pred.strip() if len(pred.strip) > 0 else 'What?' for pred in preds]
+    preds = [pred.strip() if len(pred.strip()) > 0 else 'What?' for pred in preds]
     labels = [[label.strip()] for label in labels]
 
     return preds, labels
