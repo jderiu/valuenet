@@ -46,8 +46,10 @@ def cycle_eval(
         pred_texts = [None for _ in range(len(test_data))]
     data = list(zip(test_data, pred_texts))
     predictions = []
-    for batch, pred_text_batch in tqdm(batch_list(data, args.batch_size), total=n_eval_steps):
-        examples, original_rows = data_collator(batch, pred_text_batch)
+    for batch in tqdm(batch_list(data, args.batch_size), total=n_eval_steps):
+        d_batch = [x[0] for x in batch]
+        pred_text_batch = [x[1] for x in batch]
+        examples, original_rows = data_collator(d_batch, pred_text_batch)
         for example, original_row in zip(examples, original_rows):
             with torch.no_grad():
                 results_all = model.parse(example, beam_size=args.beam_size)
@@ -177,6 +179,25 @@ def main():
 
     sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=True)
     grammar = semQL.Grammar()
+
+    # do cycle consistency evaluation
+    model = IRNet(args, device, grammar)
+    model.to(device)
+    model.load_state_dict(torch.load(args.ir_model_to_load), strict=False)
+
+    data_collator = DataCollatorCycle(
+        grammar,
+        table_data,
+        device
+    )
+
+    sketch_acc, acc, not_all_values_found, predictions = cycle_eval(
+        args,
+        val_sql_data,
+        None,
+        data_collator,
+        model
+    )
 
     print("Loading pre-trained model from '{}'".format(args.model_to_load))
     with open(os.path.join(args.model_to_load, "args.json"), "rt", encoding='utf-8') as f:
