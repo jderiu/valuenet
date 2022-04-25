@@ -51,7 +51,7 @@ def evaluate_encode_decode(
             generated_out = model.generate(
                 preprocessed_batch['input_ids'],
                 attention_mask=preprocessed_batch['attention_mask'],
-                max_length=preprocessed_batch['input_ids'].shape[1] + 32,
+                max_length=32,
                 num_beams=15,
                 repetition_penalty=2.5,
                 no_repeat_ngram_size=3,
@@ -116,6 +116,7 @@ def main():
     args = read_arguments_evaluation()
 
     device, n_gpu = setup_device()
+    device ='cpu'
     set_seed_everywhere(args.seed, n_gpu)
 
     sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=False)
