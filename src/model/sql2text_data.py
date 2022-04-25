@@ -22,11 +22,11 @@ class DataCollartorForLMSQL2Text:
         self.device = device
         self.model = model
 
-    def __call__(self, batch, return_tensors=None):
+    def __call__(self, batch, return_tensors=None, is_eval=False):
         examples = []
         for data_row in batch:
             try:
-                example = build_sql2text_example(data_row, self.schema, is_decode_only=True)
+                example = build_sql2text_example(data_row, self.schema, is_decode_only=True, is_eval=is_eval)
                 examples.append(example)
             except RuntimeError as e:
                 print("Exception while building example (training): {}".format(e))
@@ -40,7 +40,8 @@ class DataCollartorForLMSQL2Text:
             batch.values,
             self.tokenizer,
             self.tokenizer.model_max_length,
-            self.device
+            self.device,
+            add_sep_token=not is_eval,
         )
 
         out_batch = {
