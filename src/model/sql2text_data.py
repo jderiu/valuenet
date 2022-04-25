@@ -157,7 +157,7 @@ class DataCollatorCycle():
 
     def __call__(self, batch, alt_question):
         examples, original_rows = [], []
-        for i, (data_row, alt_question) in enumerate(batch, alt_question):
+        for i, (data_row, alt_question) in enumerate(zip(batch, alt_question)):
             original_row = copy.deepcopy(data_row)
             try:
                 if alt_question is not None:
