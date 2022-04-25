@@ -168,4 +168,5 @@ class DataCollatorCycle():
                 examples.append(example)
             except RuntimeError as e:
                 print("Exception while building example (training): {}".format(e))
+            original_rows.append(original_row)
         return examples, original_rows

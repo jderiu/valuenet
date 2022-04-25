@@ -180,25 +180,6 @@ def main():
     sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=True)
     grammar = semQL.Grammar()
 
-    # do cycle consistency evaluation
-    model = IRNet(args, device, grammar)
-    model.to(device)
-    model.load_state_dict(torch.load(args.ir_model_to_load), strict=False)
-
-    data_collator = DataCollatorCycle(
-        grammar,
-        table_data,
-        device
-    )
-
-    sketch_acc, acc, not_all_values_found, predictions = cycle_eval(
-        args,
-        val_sql_data,
-        None,
-        data_collator,
-        model
-    )
-
     print("Loading pre-trained model from '{}'".format(args.model_to_load))
     with open(os.path.join(args.model_to_load, "args.json"), "rt", encoding='utf-8') as f:
         train_args = json.load(f)
