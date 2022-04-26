@@ -39,6 +39,7 @@ def compute_metrics(eval_preds):
     labels = np.where(labels != -100, labels, decoder_tokenizer.pad_token_id)
     decoded_labels = decoder_tokenizer.batch_decode(labels, skip_special_tokens=True)
 
+    decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
     result = metric.compute(predictions=decoded_preds, references=decoded_labels)
     result = {"bleu": result["score"]}
 
@@ -46,6 +47,7 @@ def compute_metrics(eval_preds):
     result["gen_len"] = np.mean(prediction_lens)
     result = {k: round(v, 4) for k, v in result.items()}
     out_n = int(n_output*eval_steps)
+
     with open(os.path.join(output_path, f'results_{out_n}.txt'), 'wt', encoding='utf-8') as f:
         f.write(f'BLEU: {result["bleu"]}\n')
         for pred, label in zip(decoded_preds, decoded_labels):
