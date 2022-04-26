@@ -119,6 +119,7 @@ if __name__ == '__main__':
 
     if args.gen_type == 'encoder_decoder':
         encoder_tokenizer = AutoTokenizer.from_pretrained(args.encoder_pretrained_model, add_prefix_space=True)
+        encoder_tokenizer.additional_special_tokens = ['table', 'col', 'value']
         decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model)
         if decoder_tokenizer.pad_token_id is None:
             decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
@@ -137,6 +138,7 @@ if __name__ == '__main__':
         )
     else:
         decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model, add_prefix_space=True)
+        decoder_tokenizer.additional_special_tokens = ['table', 'col', 'value']
         decoder_tokenizer.padding_side = 'left'
         if decoder_tokenizer.pad_token_id is None:
             decoder_tokenizer.pad_token = decoder_tokenizer.bos_token

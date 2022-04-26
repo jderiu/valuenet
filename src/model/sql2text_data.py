@@ -102,13 +102,6 @@ class DataCollatorForSQL2Text:
                                                                               self.device)
 
         questions = [example.question for example in examples]
-        # labels = self.decoder_tokenizer(
-        #     questions,
-        #     padding=True,
-        #     truncation=True,
-        #     max_length=self.decoder_tokenizer.model_max_length,
-        #     return_tensors="pt"
-        # )
 
         labels_vanilla = self.decoder_tokenizer(
             questions,
