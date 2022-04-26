@@ -93,7 +93,7 @@ class DataCollatorForSQL2Text:
                 print("Exception while building example (training): {}".format(e))
         batch = Batch(examples, self.grammar, cuda=self.device)
 
-        input_ids_tensor, attention_mask_tensor, input_lengths = encode_input(batch.all_question_tokens,
+        input_ids_tensor, attention_mask_tensor, input_lengths = encode_input(batch.all_query_tokens,
                                                                               batch.all_column_tokens,
                                                                               batch.all_table_names,
                                                                               batch.values,
