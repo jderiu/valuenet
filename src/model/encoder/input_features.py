@@ -22,15 +22,11 @@ def encode_input(
     all_table_token_lengths = []
     all_values_lengths = []
 
-    tbl_speical_token = tokenizer.additional_special_tokens_ids[0]
-    col_speical_token = tokenizer.additional_special_tokens_ids[1]
-    val_speical_token = tokenizer.additional_special_tokens_ids[2]
-
     for question, columns, tables, val in zip(question_spans, column_names, table_names, values):
         question_token_ids, question_span_lengths = _tokenize_question(question, tokenizer)
-        column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer, speicial_tok_id=col_speical_token)
-        table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer, speicial_tok_id=tbl_speical_token)
-        value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer, speicial_tok_id=val_speical_token)
+        column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer, speicial_tok='</t>')
+        table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer, speicial_tok='</c>')
+        value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer, speicial_tok='</v>')
 
         all_question_span_lengths.append(question_span_lengths)
         all_column_token_lengths.append(column_token_lengths)
@@ -86,16 +82,12 @@ def encode_input_sql2text(
     all_values_lengths = []
     all_sql_span_lengths = []
 
-    tbl_speical_token = tokenizer.additional_special_tokens_ids[0]
-    col_speical_token = tokenizer.additional_special_tokens_ids[1]
-    val_speical_token = tokenizer.additional_special_tokens_ids[2]
-
     for question, sql_query, columns, tables, val in zip(question_spans, sql_spans, column_names, table_names, values):
         question_token_ids, question_span_lengths = _tokenize_question(question, tokenizer, add_sep_token)
         sql_token_ids, sql_span_lengths = _tokenize_question(sql_query, tokenizer)
-        column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer, add_special_token, speicial_tok_id=col_speical_token)
-        table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer, add_special_token, speicial_tok_id=tbl_speical_token)
-        value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer, add_special_token, speicial_tok_id=val_speical_token)
+        column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer, add_special_token, speicial_tok='</t>')
+        table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer, add_special_token, speicial_tok='</c>')
+        value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer, add_special_token, speicial_tok='</v>')
 
         all_question_span_lengths.append(question_span_lengths)
         all_sql_span_lengths.append(sql_span_lengths)
@@ -142,10 +134,10 @@ def _tokenize_question(question, tokenizer, add_sep_token=True):
     return question_tokenized_ids, question_span_lengths
 
 
-def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=True, speicial_tok_id=0):
+def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=True, speicial_tok=''):
     all_schema_element_length = []
     all_schema_element_ids = []
-
+    schema_elements_names.insert(0, [speicial_tok])
     for schema_element in schema_elements_names:
         schema_element_tokenized = tokenizer(schema_element, is_split_into_words=True, add_special_tokens=add_special_tokens)
         schema_element_ids = schema_element_tokenized.data['input_ids']
@@ -153,9 +145,9 @@ def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=
         # why the [1:]? We saw in experiments with the tokenizer that the bos_token does not appear in the second tokenization when
         # using tokenizer(text1, text_pair=text2). We therefore cut it out on purpose
         if add_special_tokens:
-            schema_element_ids_with_separator = schema_element_ids[1:] + [speicial_tok_id]
+            schema_element_ids_with_separator = schema_element_ids[1:] + [tokenizer.sep_token_id]
         else:
-            schema_element_ids_with_separator = schema_element_ids + [speicial_tok_id]
+            schema_element_ids_with_separator = schema_element_ids + [tokenizer.sep_token_id]
 
         all_schema_element_ids.extend(schema_element_ids_with_separator)
         all_schema_element_length.append(len(schema_element_ids_with_separator))
@@ -163,10 +155,10 @@ def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=
     return all_schema_element_ids, all_schema_element_length
 
 
-def _tokenize_values(values, tokenizer, add_special_tokens=True, speicial_tok_id=0):
+def _tokenize_values(values, tokenizer, add_special_tokens=True, speicial_tok=''):
     all_values_length = []
     all_values_ids = []
-
+    values.insert(0, speicial_tok)
     for value in values:
         value = format_value(value)
         value = tokenizer([value], is_split_into_words=True, add_special_tokens=add_special_tokens)
@@ -175,9 +167,9 @@ def _tokenize_values(values, tokenizer, add_special_tokens=True, speicial_tok_id
         # why the [1:]? We saw in experiments with the tokenizer that the bos_token does not appear in the second tokenization when
         # using tokenizer(text1, text_pair=text2). We therefore cut it out on purpose
         if add_special_tokens:
-            value_ids_with_separator = value_ids[1:] + [speicial_tok_id]
+            value_ids_with_separator = value_ids[1:] + [tokenizer.sep_token_id]
         else:
-            value_ids_with_separator = value_ids + [speicial_tok_id]
+            value_ids_with_separator = value_ids + [tokenizer.sep_token_id]
 
         all_values_ids.extend(value_ids_with_separator)
         all_values_length.append(len(value_ids_with_separator))
