@@ -675,7 +675,7 @@ def to_str(sql_json, N_T, schema, pre_table_names=None):
     return sql
 
 
-def transform_semQL_to_sql(schemas, sem_ql_prediction, output_dir):
+def transform_semQL_to_sql(schemas, sem_ql_prediction, output_dir, ofname='output.txt'):
 
     # TODO: find out if this adds any benefit for the trained models. If we run it with the ground truth (so no prediction, just SQL -> SemQL -> SQL) it is even slightly better without it.
     # alter_not_in(sem_ql_prediction, schemas=schemas)
@@ -685,7 +685,7 @@ def transform_semQL_to_sql(schemas, sem_ql_prediction, output_dir):
     index = range(len(sem_ql_prediction))
     count = 0
     exception_count = 0
-    with open(os.path.join(output_dir, 'output.txt'), 'w', encoding='utf8') as d, open(os.path.join(output_dir, 'ground_truth.txt'), 'w', encoding='utf8') as g:
+    with open(os.path.join(output_dir, ofname), 'w', encoding='utf8') as d, open(os.path.join(output_dir, 'ground_truth.txt'), 'w', encoding='utf8') as g:
         for i in index:
             try:
                 result = transform(sem_ql_prediction[i], schemas[sem_ql_prediction[i]['db_id']])
