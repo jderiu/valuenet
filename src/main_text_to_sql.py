@@ -117,6 +117,7 @@ if __name__ == '__main__':
 
     grammar = semQL.Grammar()
 
+    ignore_keys_for_eval = ['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions']
     if args.gen_type == 'encoder_decoder':
         metrics_fn = compute_metrics
         encoder_tokenizer = AutoTokenizer.from_pretrained(args.encoder_pretrained_model, add_prefix_space=True)
@@ -138,6 +139,7 @@ if __name__ == '__main__':
             device=device
         )
     else:
+        ignore_keys_for_eval.append('logits')
         metrics_fn = compute_metrics_decode_only
         decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model, add_prefix_space=True)
         decoder_tokenizer.additional_special_tokens = ['table', 'col', 'value']
@@ -199,4 +201,4 @@ if __name__ == '__main__':
         compute_metrics=metrics_fn
     )
 
-    trainer.train(ignore_keys_for_eval=['logits', 'past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions'])
+    trainer.train(ignore_keys_for_eval=ignore_keys_for_eval)
