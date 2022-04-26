@@ -298,7 +298,7 @@ def main():
 
     spider_evaluation.evaluate(
         os.path.join(args.prediction_dir, 'ground_truth.txt'),
-        os.path.join(args.prediction_dir, 'output.txt'),
+        os.path.join(args.prediction_dir, 'output_from_preds.txt'),
         os.path.join(args.data_dir, "testsuite_databases"),
         'exec', None, False, False, False, 1, quickmode=False, log_wandb=False)
 
