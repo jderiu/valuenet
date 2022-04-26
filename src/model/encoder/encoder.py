@@ -21,7 +21,6 @@ class TransformerEncoder(nn.Module):
         transformer_config: BartConfig = config_class.from_pretrained(pretrained_model)
         self.tokenizer: BartTokenizer = tokenizer_class.from_pretrained(pretrained_model)
         self.transformer_model: BartModel = model_class.from_pretrained(pretrained_model, config=transformer_config)
-        self.tokenizer.additional_special_tokens = ['table', 'col', 'value']
         self.pooling_head = PoolingHead(transformer_config)
 
         self.encoder_hidden_size = transformer_config.hidden_size
