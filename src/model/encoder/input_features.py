@@ -153,9 +153,9 @@ def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=
         # why the [1:]? We saw in experiments with the tokenizer that the bos_token does not appear in the second tokenization when
         # using tokenizer(text1, text_pair=text2). We therefore cut it out on purpose
         if add_special_tokens:
-            schema_element_ids_with_separator = [speicial_tok_id] + schema_element_ids[1:] + [tokenizer.sep_token_id]
+            schema_element_ids_with_separator = schema_element_ids[1:] + [speicial_tok_id]
         else:
-            schema_element_ids_with_separator = [speicial_tok_id] + schema_element_ids + [tokenizer.sep_token_id]
+            schema_element_ids_with_separator = schema_element_ids + [speicial_tok_id]
 
         all_schema_element_ids.extend(schema_element_ids_with_separator)
         all_schema_element_length.append(len(schema_element_ids_with_separator))
@@ -175,9 +175,9 @@ def _tokenize_values(values, tokenizer, add_special_tokens=True, speicial_tok_id
         # why the [1:]? We saw in experiments with the tokenizer that the bos_token does not appear in the second tokenization when
         # using tokenizer(text1, text_pair=text2). We therefore cut it out on purpose
         if add_special_tokens:
-            value_ids_with_separator = [speicial_tok_id] + value_ids[1:] + [tokenizer.sep_token_id]
+            value_ids_with_separator = value_ids[1:] + [speicial_tok_id]
         else:
-            value_ids_with_separator =[speicial_tok_id] + value_ids + [tokenizer.sep_token_id]
+            value_ids_with_separator = value_ids + [speicial_tok_id]
 
         all_values_ids.extend(value_ids_with_separator)
         all_values_length.append(len(value_ids_with_separator))
