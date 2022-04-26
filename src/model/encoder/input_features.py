@@ -12,7 +12,8 @@ def encode_input(
         values,
         tokenizer,
         max_length_model,
-        device
+        device,
+        use_special_tokens=False,
 ):
     all_input_ids = []
     all_attention_mask = []
@@ -22,11 +23,15 @@ def encode_input(
     all_table_token_lengths = []
     all_values_lengths = []
 
+    tbl_special_tok = '</t>' if use_special_tokens else ''
+    col_special_tok = '</c>' if use_special_tokens else ''
+    val_special_tok = '</v>' if use_special_tokens else ''
+
     for question, columns, tables, val in zip(question_spans, column_names, table_names, values):
         question_token_ids, question_span_lengths = _tokenize_question(question, tokenizer)
-        column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer, speicial_tok='</t>')
-        table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer, speicial_tok='</c>')
-        value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer, speicial_tok='</v>')
+        column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer, speicial_tok=tbl_special_tok)
+        table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer, speicial_tok=col_special_tok)
+        value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer, speicial_tok=val_special_tok)
 
         all_question_span_lengths.append(question_span_lengths)
         all_column_token_lengths.append(column_token_lengths)
@@ -137,7 +142,8 @@ def _tokenize_question(question, tokenizer, add_sep_token=True):
 def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=True, speicial_tok=''):
     all_schema_element_length = []
     all_schema_element_ids = []
-    schema_elements_names.insert(0, [speicial_tok])
+    if speicial_tok:
+        schema_elements_names.insert(0, [speicial_tok])
     for schema_element in schema_elements_names:
         schema_element_tokenized = tokenizer(schema_element, is_split_into_words=True, add_special_tokens=add_special_tokens)
         schema_element_ids = schema_element_tokenized.data['input_ids']
@@ -158,7 +164,8 @@ def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=
 def _tokenize_values(values, tokenizer, add_special_tokens=True, speicial_tok=''):
     all_values_length = []
     all_values_ids = []
-    values.insert(0, speicial_tok)
+    if speicial_tok:
+        values.insert(0, speicial_tok)
     for value in values:
         value = format_value(value)
         value = tokenizer([value], is_split_into_words=True, add_special_tokens=add_special_tokens)

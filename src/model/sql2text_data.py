@@ -99,7 +99,9 @@ class DataCollatorForSQL2Text:
                                                                               batch.values,
                                                                               self.encoder_tokenizer,
                                                                               self.encoder_tokenizer.model_max_length,
-                                                                              self.device)
+                                                                              self.device,
+                                                                              use_special_tokens=True)
+
 
         questions = [example.question for example in examples]
 
