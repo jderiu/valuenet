@@ -44,7 +44,9 @@ class TransformerEncoder(nn.Module):
                                                                               values,
                                                                               self.tokenizer,
                                                                               self.max_sequence_length,
-                                                                              self.device)
+                                                                              self.device,
+                                                                              use_special_tokens=True
+                                                                              )
 
         # while the "last_hidden-states" is one hidden state per input token, the pooler_output is the hidden state of the [CLS]-token, further processed.
         # See e.g. "BertModel" documentation for more information.
