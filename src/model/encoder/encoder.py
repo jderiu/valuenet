@@ -121,8 +121,8 @@ class TransformerEncoder(nn.Module):
             value_out_padded = pad_sequence(value_out, batch_first=True)
         else:
             value_out_padded = torch.zeros(table_out_padded.shape[0], 0, table_out_padded.shape[2]).to(self.device)
-        
-        if value_out_padded:
+
+        if use_special_tokens:
             value_out_padded = value_out_padded[:, 1:]
 
         # we need the information of how many tokens are question tokens to later create the mask when calculating
