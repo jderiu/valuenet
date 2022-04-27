@@ -142,9 +142,10 @@ def _tokenize_question(question, tokenizer, add_sep_token=True):
 def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=True, speicial_tok=''):
     all_schema_element_length = []
     all_schema_element_ids = []
+    it_schema_elements = schema_elements_names
     if speicial_tok:
-        schema_elements_names.insert(0, [speicial_tok])
-    for schema_element in schema_elements_names:
+        it_schema_elements = [[speicial_tok]] + schema_elements_names
+    for schema_element in it_schema_elements:
         schema_element_tokenized = tokenizer(schema_element, is_split_into_words=True, add_special_tokens=add_special_tokens)
         schema_element_ids = schema_element_tokenized.data['input_ids']
 
@@ -164,9 +165,10 @@ def _tokenize_schema_names(schema_elements_names, tokenizer, add_special_tokens=
 def _tokenize_values(values, tokenizer, add_special_tokens=True, speicial_tok=''):
     all_values_length = []
     all_values_ids = []
+    it_values = values
     if speicial_tok:
-        values.insert(0, speicial_tok)
-    for value in values:
+        it_values = [speicial_tok] + values #avid mutating the list
+    for value in it_values:
         value = format_value(value)
         value = tokenizer([value], is_split_into_words=True, add_special_tokens=add_special_tokens)
         value_ids = value.data['input_ids']
