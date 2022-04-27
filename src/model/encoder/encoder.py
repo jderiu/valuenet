@@ -38,6 +38,7 @@ class TransformerEncoder(nn.Module):
         print("Successfully loaded pre-trained transformer '{}'".format(pretrained_model))
 
     def forward(self, question_tokens, column_names, table_names, values):
+        use_special_tokens = True
         input_ids_tensor, attention_mask_tensor, input_lengths = encode_input(question_tokens,
                                                                               column_names,
                                                                               table_names,
@@ -45,7 +46,7 @@ class TransformerEncoder(nn.Module):
                                                                               self.tokenizer,
                                                                               self.max_sequence_length,
                                                                               self.device,
-                                                                              use_special_tokens=True
+                                                                              use_special_tokens=use_special_tokens
                                                                               )
 
         # while the "last_hidden-states" is one hidden state per input token, the pooler_output is the hidden state of the [CLS]-token, further processed.
@@ -98,9 +99,13 @@ class TransformerEncoder(nn.Module):
 
         column_out = self._back_to_original_size(column_last_states, column_hidden_states)
         column_out_padded = pad_sequence(column_out, batch_first=True)
+        if use_special_tokens:
+            column_out_padded = column_out_padded[:, 1:]
 
         table_out = self._back_to_original_size(table_last_states, table_hidden_states)
         table_out_padded = pad_sequence(table_out, batch_first=True)
+        if use_special_tokens:
+            table_out_padded = table_out_padded[:, 1:]
 
         # in contrary to columns/tables there can be no values in a batch. In that case, return an empty tensor.
         if list(flatten(value_hidden_states)):
@@ -116,6 +121,9 @@ class TransformerEncoder(nn.Module):
             value_out_padded = pad_sequence(value_out, batch_first=True)
         else:
             value_out_padded = torch.zeros(table_out_padded.shape[0], 0, table_out_padded.shape[2]).to(self.device)
+        
+        if value_out_padded:
+            value_out_padded = value_out_padded[:, 1:]
 
         # we need the information of how many tokens are question tokens to later create the mask when calculating
         # attention over schema
