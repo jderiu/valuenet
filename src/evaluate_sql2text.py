@@ -160,7 +160,7 @@ def evaulate_decode_only(
                 pad_token_id=tokenizer.pad_token_id,
             )
         decoded_out = tokenizer.batch_decode(generated_out, skip_special_tokens=True)
-        pred_batch_out = [x.split('TEXT:')[1].replace('\n', '') for x in decoded_out]
+        pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
         labels = [x['question'] for x in batch]
 
         out_labels.extend(labels)
@@ -182,7 +182,7 @@ def main():
     device, n_gpu = setup_device()
     set_seed_everywhere(args.seed, n_gpu)
 
-    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=False)
+    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
     grammar = semQL.Grammar()
 
     print("Loading pre-trained model from '{}'".format(args.model_to_load))
@@ -196,6 +196,7 @@ def main():
             decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
         model = EncoderDecoderModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
         model.to(device)
+        model.eval()
         pytorch_total_params = sum(p.numel() for p in model.parameters())
         print(f'Number of Params: {pytorch_total_params}!')
 
@@ -228,6 +229,7 @@ def main():
         # model = GPT2LMHeadModel.from_pretrained('gpt2')
         model = GPT2LMHeadModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
         model.to(device)
+        model.eval()
         pytorch_total_params = sum(p.numel() for p in model.parameters())
         print(f'Number of Params: {pytorch_total_params}!')
 

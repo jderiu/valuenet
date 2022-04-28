@@ -60,18 +60,16 @@ def batch_list(iterable, n=1):
     for ndx in range(0, l, n):
         yield iterable[ndx:min(ndx + n, l)]
 
+
 def compute_metrics_decode_only(eval_preds):
     global n_output
-    generator = pipeline('text-generation', model=model, tokenizer=decoder_tokenizer, device=0)
     preds, labels = eval_preds
-    #decoded_preds = decoder_tokenizer.batch_decode(preds.argmax(axis=2), skip_special_tokens=True)
+    model.eval()
     # Replace -100 in the labels as we can't decode them.
     labels = np.where(labels != -100, labels, decoder_tokenizer.pad_token_id)
     decoded_labels = decoder_tokenizer.batch_decode(labels, skip_special_tokens=True)
     out_labels, out_preds = [], []
-    # decoder_tokenizer.batch_decode(model.generate(
-    #     decoder_tokenizer([x.split('TEXT:')[0] + 'TEXT:' for x in decoded_labels], return_tensors='pt', padding=True)[
-    #         'input_ids'].to(device)), skip_special_tokens=True)
+
     n_decoding_steps = int(len(decoded_labels)/args.eval_batch_size) + 1
     for decoded_label_batch in tqdm(batch_list(decoded_labels, n=args.eval_batch_size), desc="Decoding:", total=n_decoding_steps):
         prefix_batch = [x.split('TEXT:')[0] + 'TEXT:' for x in decoded_label_batch]

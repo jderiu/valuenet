@@ -5,6 +5,7 @@ from src.spider.example_builder import build_sql2text_example, build_example
 from src.model.encoder.input_features import encode_input_sql2text, encode_input
 from spacy.lang.en import English
 
+
 class DataCollartorForLMSQL2Text:
     label_pad_token_id: int = -100
 
@@ -138,7 +139,7 @@ class DataCollatorForSQL2Text:
         return out_batch
 
 
-class DataCollatorCycle():
+class DataCollatorCycle:
     def __init__(
             self,
             grammar,

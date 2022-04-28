@@ -117,7 +117,7 @@ def load_data_new(sql_path, table_data, use_small=False):
         data = json.load(inf)
         # resize before lower_keys() to reduce computation effort
         if use_small:
-            data = data[:80]
+            data = data[:10]
         data = lower_keys(data)
         sql_data += data
 

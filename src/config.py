@@ -106,7 +106,7 @@ def read_arguments_evaluation():
 
     # evaluation
     parser.add_argument('--evaluation_type', default='spider', type=str)
-
+    parser.add_argument('--toy', default=False, action='store_true')
     parser.add_argument('--model_to_load', type=str)
     parser.add_argument('--ir_model_to_load', type=str)
     parser.add_argument('--checkpoint', type=int)
