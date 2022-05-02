@@ -62,7 +62,7 @@ class DataCollatorText2Text:
 
         input_ids_tensor, attention_mask_tensor, input_lengths = encode_input_sql2text(
             batch.all_question_tokens,
-            batch.all_question_tokens,
+            [x[1:] for x in batch.all_question_tokens],
             batch.all_column_tokens,
             batch.all_table_names,
             batch.values,
