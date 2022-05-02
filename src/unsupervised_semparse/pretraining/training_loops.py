@@ -7,7 +7,6 @@ from pytictoc import TicToc
 from src.utils import save_model
 
 
-
 def pretrain_loop(
         args,
         train_dataloader,
@@ -25,6 +24,12 @@ def pretrain_loop(
     for epoch in tqdm(range(int(args.num_epochs))):
         sketch_loss_weight = 1 if epoch < args.loss_epoch_threshold else args.sketch_loss_weight
         t.tic()
+        sketch_acc, acc, _, predictions = pretrain_evaluate(model,
+                                                            dev_loader,
+                                                            data_collator,
+                                                            args.beam_size
+                                                            )
+
         pretrain_decoder_epoch(
             global_step,
             train_dataloader,
@@ -35,14 +40,11 @@ def pretrain_loop(
             sketch_loss_weight=sketch_loss_weight
         )
 
-        sketch_acc, acc, _, predictions = pretrain_evaluate(model,
-                                                            dev_loader,
-                                                            data_collator,
-                                                            args.beam_size
-                                                            )
         if acc > best_acc:
             save_model(model, os.path.join(output_path))
-            tqdm.write("Accuracy of this epoch ({}) is higher then the so far best accuracy ({}). Save model.".format(acc, best_acc))
+            tqdm.write(
+                "Accuracy of this epoch ({}) is higher then the so far best accuracy ({}). Save model.".format(acc,
+                                                                                                               best_acc))
             best_acc = acc
         eval_results_string = "Epoch: {}    Sketch-Accuracy: {}     Accuracy: {}".format(epoch + 1, sketch_acc, acc)
         tqdm.write(eval_results_string)
@@ -59,7 +61,6 @@ def pretrain_evaluate(model, dev_loader, data_collator, beam_size):
     for batch in tqdm(dev_loader, desc="Evaluating"):
         examples, original_rows = data_collator(batch)
         for example, original_row in zip(examples, original_rows):
-
             with torch.no_grad():
                 results_all = model.parse(example, beam_size=beam_size)
             results = results_all[0]
@@ -100,11 +101,9 @@ def pretrain_evaluate(model, dev_loader, data_collator, beam_size):
 
             predictions.append(prediction)
 
-        print(
-            f"in {found_in_beams} times we found the correct results in another beam (failing queries: {total - rule_label_correct})")
+    print(f"in {found_in_beams} times we found the correct results in another beam (failing queries: {total - rule_label_correct})")
 
-        return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(
-            not_all_values_found) / float(total), predictions
+    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(not_all_values_found) / float(total), predictions
 
 
 def pretrain_decoder_epoch(
