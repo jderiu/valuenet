@@ -97,6 +97,59 @@ def read_arguments_train():
 
     return args
 
+def read_arguments_pretrain():
+    parser = argparse.ArgumentParser(description="Run training with following arguments")
+
+    # model configuration
+    _add_model_configuration(parser)
+
+    # general configuration
+    parser.add_argument('--exp_name', default='exp', type=str)
+    parser.add_argument('--seed', default=90, type=int)
+    parser.add_argument('--toy', default=False, action='store_true')
+    parser.add_argument('--data_set', default='spider', type=str)
+    parser.add_argument('--pretrain_type', default='sql2sql', type=str)
+
+    # training & optimizer configuration
+    parser.add_argument('--batch_size', default=1, type=int)
+    parser.add_argument('--eval_batch_size', default=1, type=int)
+    parser.add_argument('--gradient_accumulation_steps', default=1, type=int)
+    parser.add_argument('--num_epochs', default=5.0, type=float)
+    parser.add_argument('--model_output_dir', default=Config.EXPERIMENT_PREFIX, type=str)
+
+    parser.add_argument('--lr_base', default=1e-3, type=float)
+    parser.add_argument('--lr_connection', default=1e-4, type=float)
+    parser.add_argument('--lr_transformer', default=2e-5, type=float)
+    # parser.add_argument('--adam_eps', default=1e-8, type=float)
+    parser.add_argument('--scheduler_gamma', default=0.5, type=int)
+    parser.add_argument('--max_grad_norm', default=1.0, type=float)
+    parser.add_argument('--clip_grad', default=5., type=float)
+    parser.add_argument('--loss_epoch_threshold', default=50, type=int)
+    parser.add_argument('--sketch_loss_weight', default=1.0, type=float)
+    parser.add_argument('--model_to_load', type=str, default=None)
+    parser.add_argument('--pretrain_epochs', type=int, default=0)
+    parser.add_argument('--eval_every_n_steps', type=int, default=1000)
+
+    parser.add_argument('--run_spider_evaluation_after_epoch', action='store_true', default=False,
+                        help='Run evaluation on the spider test suite after each epoch. If false, only accuracy/sketch_accuracy on the SemQL result is calculated.')
+
+    # prediction configuration (run after each epoch)
+    parser.add_argument('--beam_size', default=5, type=int, help='beam size for beam search')
+    parser.add_argument('--decode_max_time_step', default=40, type=int,
+                        help='maximum number of time steps used in decoding and sampling')
+
+    args = parser.parse_args()
+
+    args.data_dir = os.path.join(Config.DATA_PREFIX, args.data_set)
+    #args.model_output_dir = Config.EXPERIMENT_PREFIX
+
+    print("*** parsed configuration from command line and combine with constants ***")
+
+    for argument in vars(args):
+        print("argument: {}={}".format(argument, getattr(args, argument)))
+
+    return args
+
 
 def read_arguments_evaluation():
     parser = argparse.ArgumentParser(description="Run evaluation with following arguments")
