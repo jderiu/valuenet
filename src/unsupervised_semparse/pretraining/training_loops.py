@@ -24,11 +24,6 @@ def pretrain_loop(
     for epoch in tqdm(range(int(args.num_epochs))):
         sketch_loss_weight = 1 if epoch < args.loss_epoch_threshold else args.sketch_loss_weight
         t.tic()
-        sketch_acc, acc, _, predictions = pretrain_evaluate(model,
-                                                            dev_loader,
-                                                            data_collator,
-                                                            args.beam_size
-                                                            )
 
         pretrain_decoder_epoch(
             global_step,
@@ -39,6 +34,12 @@ def pretrain_loop(
             args.clip_grad,
             sketch_loss_weight=sketch_loss_weight
         )
+
+        sketch_acc, acc, _, predictions = pretrain_evaluate(model,
+                                                            dev_loader,
+                                                            data_collator,
+                                                            args.beam_size
+                                                            )
 
         if acc > best_acc:
             save_model(model, os.path.join(output_path))
@@ -101,9 +102,11 @@ def pretrain_evaluate(model, dev_loader, data_collator, beam_size):
 
             predictions.append(prediction)
 
-    print(f"in {found_in_beams} times we found the correct results in another beam (failing queries: {total - rule_label_correct})")
+    print(
+        f"in {found_in_beams} times we found the correct results in another beam (failing queries: {total - rule_label_correct})")
 
-    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(not_all_values_found) / float(total), predictions
+    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(
+        not_all_values_found) / float(total), predictions
 
 
 def pretrain_decoder_epoch(
