@@ -90,6 +90,8 @@ class CycleTrainer:
             gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, self.sql_baseline)
 
             logs = ir_res + gpt_train_res
+            logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
+            logs['text_rewards_torch'] = float(text_rewards_torch.mean())
             wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):

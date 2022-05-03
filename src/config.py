@@ -17,7 +17,7 @@ def write_config_to_file(args, output_path):
 
 def _add_model_configuration(parser):
 
-    parser.add_argument('--cuda', default=False, action='store_true')
+    parser.add_argument('--cuda', default=True, action='store_true')
 
     # language model configuration
     parser.add_argument('--encoder_pretrained_model', default='facebook/bart-base', type=str)
