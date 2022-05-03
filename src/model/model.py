@@ -20,6 +20,7 @@ class IRNet(BasicModel):
         super(IRNet, self).__init__()
         self.args = args
         self.grammar = grammar
+        self.device = device
         self.use_column_pointer = args.column_pointer
 
         if args.cuda:
@@ -102,6 +103,12 @@ class IRNet(BasicModel):
         nn.init.xavier_normal_(self.N_embed.weight.data)
         print('Use Column Pointer: ', True if self.use_column_pointer else False)
         self.value_function = nn.Linear(self.encoder.encoder_hidden_size, 1)
+
+    def init_encoder(self):
+        self.encoder = TransformerEncoder(self.args.encoder_pretrained_model,
+                                          self.device, self.args.max_seq_length,
+                                          self.args.embed_size,
+                                          self.args.hidden_size)
 
     def forward(self, examples):
         args = self.args
@@ -195,7 +202,7 @@ class IRNet(BasicModel):
                 # 3. ("pre_types"): the parent feeding (see TranX-paper)
                 x = torch.cat(inputs, dim=-1)
 
-            src_mask = nn_utils.length_array_to_mask_tensor(question_token_lengths, cuda=self.cuda)
+            src_mask = nn_utils.length_array_to_mask_tensor(question_token_lengths, cuda=self.device != 'cpu')
 
             # in here we do get the next step of the sketch_decoder_lstm, together with an attention mechanism, as described in TranX, 2.3
             # we only use (h_t, cell_t) only for the next step, to predict the sketch we use only att_t (keep in mind that h_t has already been used to calculate att_t)
@@ -339,7 +346,7 @@ class IRNet(BasicModel):
                 x = torch.cat(inputs, dim=-1)
 
             # src_mask = batch.src_token_mask
-            src_mask = nn_utils.length_array_to_mask_tensor(question_token_lengths, cuda=self.cuda)
+            src_mask = nn_utils.length_array_to_mask_tensor(question_token_lengths, cuda=self.device != 'cpu')
 
             # we use a second RNN to predict the next actions for the leaf-nodes. Everything else stays the same as above
             (h_t, cell_t), att_t, aw = self.step(x, h_tm1, question_encodings,

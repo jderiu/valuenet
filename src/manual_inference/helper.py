@@ -1,4 +1,5 @@
 import copy
+import os.path
 import sqlite3
 from pathlib import Path
 
@@ -97,7 +98,8 @@ def _execute_query_sqlite(sql, database_path, db):
 def get_schemas_spider():
     base_path = Path(Config.DATA_PREFIX) / 'spider' / 'original'
     schema_path = str(base_path / 'tables.json')
-    database_path = str(base_path / 'database')
+    database_path = os.path.join(Path(Config.DATA_PREFIX) , 'spider', 'testsuite_databases')
+    #database_path = str(base_path / 'database')
 
     schemas_raw, schemas_dict = spider_utils.load_schema(schema_path)
 

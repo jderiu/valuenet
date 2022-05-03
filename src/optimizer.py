@@ -4,6 +4,13 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import MultiStepLR
 
 
+def build_optimizer_base(model, num_train_steps,lr_base, scheduler_gamma):
+    print("Build optimizer and scheduler. Total training steps: {}".format(num_train_steps))
+    optimizer = Adam(model.parameters(), lr=lr_base)
+    scheduler = MultiStepLR(optimizer, milestones=[21, 41, 61, 81], gamma=scheduler_gamma)
+
+    return optimizer, scheduler
+
 def build_optimizer_encoder(model, num_train_steps, lr_transformer, lr_connection, lr_base, scheduler_gamma):
     print("Build optimizer and scheduler. Total training steps: {}".format(num_train_steps))
 
