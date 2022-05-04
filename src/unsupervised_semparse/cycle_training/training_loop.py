@@ -161,6 +161,8 @@ class CycleTrainer:
         decoded_out = self.gpt2_tokenizer.batch_decode(generated_out, skip_special_tokens=True)
         pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
         for i, pred_out in enumerate(pred_batch_out):
+            if len(pred_out) < 2:
+                pred_out = 'What is this?'
             original_rows[i]['question'] = pred_out
             original_rows[i]['question_toks'] = tokenize_question(self.nlp_tokenizer, pred_out)
             original_rows[i]['values'] = get_values(
