@@ -384,8 +384,7 @@ class IRNet(BasicModel):
             column_attention_weights = F.softmax(weights, dim=-1)
 
             # We do the same again to select a table.
-            table_weights = self.table_pointer_net(src_encodings=schema_embedding, query_vec=att_t.unsqueeze(0),
-                                                   src_token_mask=None)
+            table_weights = self.table_pointer_net(src_encodings=schema_embedding, query_vec=att_t.unsqueeze(0), src_token_mask=None)
 
             # The first part of masking the tables is basically the same as for the columns: not each example of the batch has the same
             # columns, therefore we need to mask out the unused ones.
@@ -404,14 +403,13 @@ class IRNet(BasicModel):
             table_weights = F.softmax(table_weights, dim=-1)
 
             # Select a value with the pointer network
-            value_weights = self.value_pointer_net(src_encodings=value_embedding, query_vec=att_t.unsqueeze(0),
-                                                   src_token_mask=None)
+            value_weights = self.value_pointer_net(src_encodings=value_embedding, query_vec=att_t.unsqueeze(0), src_token_mask=None)
 
             # As not every question in the batch has the same number of values, we need to mask out the unused values before using the softmax.
             # The "masked_fill_" function fills every position with a "True"  with the given value (minus infinity).
             # So the remaining columns (the M in the beginning) is the actual columns.
             # TODO: remember already "used" values and mask them out. We might also avoid masking if there is only one value per row.
-            value_weights.data.masked_fill_(batch.value_token_mask.bool(), -99999)
+            value_weights.data.masked_fill_(batch.value_token_mask.bool(), -1e4)
 
             # Calculate the probabilities for the selected values.
             value_weights = F.softmax(value_weights, dim=-1)
