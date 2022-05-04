@@ -139,12 +139,14 @@ class CycleTrainer:
             loss_adv = (loss * (rewards_batch - baseline)).mean()
 
         self.gpt2_optimizer.zero_grad()
-        self.gpt2_scaler.scale(loss_adv).backward()
-        # loss_adv.backward()
-        # torch.nn.utils.clip_grad_norm_(self.gpt2_model.parameters(), self.args.clip_grad)
-        self.gpt2_scaler.step(self.gpt2_optimizer)
-        self.gpt2_scaler.update()
-        # self.gpt2_optimizer.step()
+        if self.device =='cpu':
+            loss_adv.backward()
+            torch.nn.utils.clip_grad_norm_(self.gpt2_model.parameters(), self.args.clip_grad)
+            self.gpt2_optimizer.step()
+        else:
+            self.gpt2_scaler.scale(loss_adv).backward()
+            self.gpt2_scaler.step(self.gpt2_optimizer)
+            self.gpt2_scaler.update()
 
         return {
             'gpt2_loss': float(loss.mean()),
@@ -164,11 +166,14 @@ class CycleTrainer:
         mean_lf_loss = float(torch.mean(-lf_loss))
 
         self.ir_optimizer.zero_grad()
-        self.ir_scaler.scale(loss_adv).backward()
-        # loss_adv.backward()
-        # torch.nn.utils.clip_grad_norm_(self.ir_model.parameters(), self.args.clip_grad)
-        self.ir_scaler.step(self.ir_optimizer)
-        self.ir_scaler.update()
+        if self.device == 'cpu':
+            loss_adv.backward()
+            torch.nn.utils.clip_grad_norm_(self.ir_model.parameters(), self.args.clip_grad)
+            self.ir_optimizer.step()
+        else:
+            self.ir_scaler.scale(loss_adv).backward()
+            self.ir_scaler.step(self.ir_optimizer)
+            self.ir_scaler.update()
 
         return {
             'ir_loss_rl': float(loss_adv),
@@ -183,7 +188,7 @@ class CycleTrainer:
             generated_out = self.gpt2_model.generate(
                 encoded_batch['input_ids'],
                 attention_mask=encoded_batch['attention_mask'],
-                max_length=encoded_batch['input_ids'].shape[1] + 32,
+                max_length=encoded_batch['input_ids'].shape[1] + 16,
                 num_beams=beam_size,
                 repetition_penalty=2.5,
                 no_repeat_ngram_size=3,
