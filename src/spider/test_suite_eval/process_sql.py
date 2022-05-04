@@ -117,7 +117,7 @@ def tokenize(string):
     string = str(string)
     string = string.replace("\'", "\"")  # ensures all string values wrapped by "" problem??
     quote_idxs = [idx for idx, char in enumerate(string) if char == '"']
-    assert len(quote_idxs) % 2 == 0, "Unexpected quote"
+    assert len(quote_idxs) % 2 == 0, f"Unexpected quote: {string}"
 
     # keep string value as token
     vals = {}
