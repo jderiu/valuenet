@@ -67,7 +67,7 @@ class CycleTrainer:
             device=device
         )
 
-        self.sql_baseline = 0.0
+        self.sql_baseline = -0.95
         self.bleu_baseline = 0.1
 
     def train(self):

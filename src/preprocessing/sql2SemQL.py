@@ -107,7 +107,7 @@ class Parser:
             result.append(A(sel[0])) # A() represents an aggregator. e.g. #0 is 'none', #3 is 'count'
             result.append(C(sql['col_set'].index(sql['names'][sel[1][1][1]])))
             # now check for the situation with *
-            if sel[1][1][1] == 0:
+            if sel[1][1][0] == 0:
                 result.append(self._parser_column0(sql, select))  # The "*" needs an extra handling, as it belongs not to a "normal" table.
             else:
                 result.append(T(sql['col_table'][sel[1][1][1]]))  # for every other column, we can simply add a T() with the table this column belongs to.

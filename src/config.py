@@ -172,9 +172,9 @@ def read_arguments_cycletrain():
     parser.add_argument('--num_epochs', default=5.0, type=float)
     parser.add_argument('--model_output_dir', default=Config.EXPERIMENT_PREFIX, type=str)
 
-    parser.add_argument('--lr_base', default=1e-3, type=float)
-    parser.add_argument('--lr_connection', default=1e-4, type=float)
-    parser.add_argument('--lr_transformer', default=2e-5, type=float)
+    parser.add_argument('--lr_base', default=1e-5, type=float)
+    parser.add_argument('--lr_connection', default=1e-5, type=float)
+    parser.add_argument('--lr_transformer', default=2e-6, type=float)
     # parser.add_argument('--adam_eps', default=1e-8, type=float)
     parser.add_argument('--scheduler_gamma', default=0.5, type=int)
     parser.add_argument('--max_grad_norm', default=1.0, type=float)
