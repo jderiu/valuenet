@@ -73,8 +73,8 @@ class CycleTrainer:
             device=device
         )
 
-        self.sql_baseline = -0.95
-        self.bleu_baseline = 0.1
+        self.sql_baseline = [-0.95]
+        self.bleu_baseline = [0.1]
 
     def train(self):
         for epoch in tqdm(range(int(self.args.num_epochs))):
@@ -94,12 +94,22 @@ class CycleTrainer:
             sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
             text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
 
-            ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, self.bleu_baseline)
-            gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, self.sql_baseline)
+            bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
+            sql_baseline = sum(self.sql_baseline) / len(self.sql_baseline)
+            ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, bleu_baseline)
+            gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
+
+            self.bleu_baseline.extend(text_rewards)
+            self.sql_baseline.extend(sql_rewards_torch)
+
+            self.bleu_baseline = self.bleu_baseline[-100:]
+            self.sql_baseline = self.sql_baseline[-100:]
 
             logs = {**ir_res, **gpt_train_res}
             logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
             logs['text_rewards_torch'] = float(text_rewards_torch.mean())
+            logs['bleu_baseline'] = float(bleu_baseline)
+            logs['sql_baseline'] = float(sql_baseline)
             wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):
