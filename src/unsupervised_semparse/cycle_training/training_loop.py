@@ -161,7 +161,7 @@ class CycleTrainer:
     def sql2text(self, batch):
         beam_size = self.args.beam_size
         encoded_batch, original_rows = self.sql2text_collator(batch, is_eval=True)
-        with torch.no_grad():
+        with torch.no_grad(), torch.cuda.amp.autocast():
             generated_out = self.gpt2_model.generate(
                 encoded_batch['input_ids'],
                 attention_mask=encoded_batch['attention_mask'],
@@ -193,7 +193,7 @@ class CycleTrainer:
         examples, original_rows = self.text2sql_collator(batch)
         fake_batch = []
         for example, original_row in zip(examples, original_rows):
-            with torch.no_grad():
+            with torch.no_grad(), torch.cuda.amp.autocast():
                 results_all = self.ir_model.parse(example, beam_size=beam_size)
             results = results_all[0]
             all_predictions = []
