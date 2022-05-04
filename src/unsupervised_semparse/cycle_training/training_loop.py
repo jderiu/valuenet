@@ -1,5 +1,5 @@
 import torch, os
-from src.data_loader import get_data_loader
+from src.data_loader import get_data_loader, get_random_sampler
 from src.manual_inference.helper import _semql_to_sql
 from src.unsupervised_semparse.cycle_training.data_collators import DataCollatorText2SQL, DataCollatorSQL2Text
 from src.spider.test_suite_eval.process_sql import tokenize
@@ -60,7 +60,9 @@ class CycleTrainer:
                                                      growth_interval=2000, enabled=True)
         self.ir_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
                                                    growth_interval=2000, enabled=True)
-        self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
+        #self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
+        db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
+        self.train_loader, self.dev_loader = get_random_sampler(train_data, valid_data, args.batch_size, db_names_to_schema, 5)
         self.text2sql_collator = DataCollatorText2SQL(
             grammar=grammar,
             schema=schema,
@@ -77,11 +79,11 @@ class CycleTrainer:
         self.bleu_baseline = [0.1]
 
     def train(self):
-        for epoch in tqdm(range(int(self.args.num_epochs))):
-            self.run_epoch()
+        num_train_steps = int((len(self.train_loader) * self.args.num_epochs)/self.args.batch_size)
+        for step in tqdm(range(num_train_steps), desc="Training", total=num_train_steps):
+            sample_ids = self.train_loader.sample_batch(self.args.batch_size)
+            batch = [self.train_loader.dataset[sample_id] for sample_id in sample_ids]
 
-    def run_epoch(self):
-        for step, batch in enumerate(tqdm(self.train_loader, desc="Training")):
             fake_text_batch = self.sql2text(batch)
             fake_sql_batch = self.text2sql(batch)
 
@@ -104,6 +106,12 @@ class CycleTrainer:
 
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
+
+            for i, sample_id in enumerate(sample_ids):
+                if sql_rewards[i] == 1 or text_rewards[i] > 0.2:
+                    self.train_loader.update_sample(sample_id, True)
+                else:
+                    self.train_loader.update_sample(sample_id, False)
 
             logs = {**ir_res, **gpt_train_res}
             logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())

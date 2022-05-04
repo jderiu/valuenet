@@ -98,6 +98,10 @@ class CurriculumIterator():
 
         return box_probs
 
+    def sample_batch(self, batch_size):
+        sample_ids = [self.sample_next() for _ in range(batch_size)]
+        return sample_ids
+
     def sample_next(self):
         box_probs = self.compute_box_probas()
         current_box = random.choices(self.boxes, box_probs)[0]
