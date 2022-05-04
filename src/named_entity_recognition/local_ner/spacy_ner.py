@@ -10,9 +10,10 @@ def local_named_entity_recognition(document):
     }
     doc = nlp(document)
     for ent in doc.ents:
+        #avoidhaving to add metadata, which is used in preprocessing lateron -> spacy does not provide this like the GooogleAPI
         lbl = ent.label_
-        if lbl == 'MONEY':
-            lbl = 'PRICE'
+        if lbl in ['MONEY', 'NUMBER', 'DATE']:
+            lbl = 'PERSON'
 
         ent_dict = {
             'name': ent.text,

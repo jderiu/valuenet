@@ -1,25 +1,20 @@
 import wandb, json
 import torch, os
-import numpy as np
-from tqdm import tqdm
-from datasets import load_metric
 
 from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 from transformers import AutoTokenizer
-from transformers.trainer_seq2seq import Trainer
-from transformers.training_args_seq2seq import TrainingArguments
-from transformers import SchedulerType
+
 
 from src.model.model import IRNet
-from src.data_loader import get_data_loader
 from src.config import write_config_to_file, read_arguments_cycletrain
 from src.intermediate_representation import semQL
 from src.spider import spider_utils
-from src.optimizer import build_optimizer_encoder
 from src.utils import setup_device, set_seed_everywhere, create_experiment_folder
 from src.unsupervised_semparse.cycle_training.training_loop import CycleTrainer
 from src.named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
 from src.manual_inference.helper import get_schemas_spider
+
+
 if __name__ == '__main__':
     args = read_arguments_cycletrain()
 
@@ -44,6 +39,9 @@ if __name__ == '__main__':
     db_value_finders = {
         db_name : DatabaseValueFinderSQLite(database_path_spider, db_name, schema_path_spider) for db_name in schemas_dict_spider.keys()
     }
+
+    with open(os.path.join(args.data_dir, 'dummy_queries.json'), 'rt', encoding='utf-8') as f:
+        dummy_queries = json.load(f)
 
     # Load pretrained model
     ir_model = IRNet(args, device, grammar)
@@ -79,6 +77,7 @@ if __name__ == '__main__':
         grammar,
         table_data,
         db_value_finders,
+        dummy_queries,
         device
     )
 

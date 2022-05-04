@@ -2,7 +2,7 @@ import json
 import re
 from unittest import TestCase
 
-from preprocessing.sql2SemQL import Parser
+from src.preprocessing.sql2SemQL import Parser
 
 
 def _clean(text):

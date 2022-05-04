@@ -27,6 +27,7 @@ class CycleTrainer:
             grammar,
             schema,
             db_value_finders,
+            dummy_queries,
             device
     ):
         nlp = English()
@@ -37,6 +38,7 @@ class CycleTrainer:
         self.args = args
         self.schema = schema
         self.device = device
+        self.dummy_queries = dummy_queries
         self.db_value_finders = db_value_finders
         self.kmaps = build_foreign_key_map_from_json(os.path.join(args.data_dir, "original", 'tables.json'))
         self.db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
@@ -66,7 +68,7 @@ class CycleTrainer:
         )
 
         self.sql_baseline = 0.0
-        self.bleu_baseline = 10.0
+        self.bleu_baseline = 0.1
 
     def train(self):
         for epoch in tqdm(range(int(self.args.num_epochs))):
@@ -89,7 +91,7 @@ class CycleTrainer:
             ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, self.bleu_baseline)
             gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, self.sql_baseline)
 
-            logs = ir_res + gpt_train_res
+            logs = {**ir_res , **gpt_train_res}
             logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
             logs['text_rewards_torch'] = float(text_rewards_torch.mean())
             wandb.log(logs)
@@ -185,18 +187,20 @@ class CycleTrainer:
                 for beam in results:
                     all_predictions.append(" ".join([str(x) for x in beam.actions]))
             except Exception as e:
-                # print(e)
                 full_prediction = ""
 
+            if not full_prediction == "":
             # here we set assemble the predicted sketch actions as string
-            original_row['rule_label'] = full_prediction
-            original_row['sketch_result'] = " ".join(str(x) for x in results_all[1])
-            original_row['model_result'] = full_prediction
+                original_row['rule_label'] = full_prediction
+                original_row['sketch_result'] = " ".join(str(x) for x in results_all[1])
+                original_row['model_result'] = full_prediction
 
-            sql = _semql_to_sql(original_row, self.schema).replace('"', '')
+                sql = _semql_to_sql(original_row, self.schema).replace('"', '')
 
-            original_row['query'] = sql
-            original_row['query_toks'] = tokenize(sql)
+                original_row['query'] = sql
+                original_row['query_toks'] = tokenize(sql)
+            else:
+                self.create_dummy_row(original_row)
             fake_batch.append(original_row)
         return fake_batch
 
@@ -207,7 +211,7 @@ class CycleTrainer:
             text_out = cycled_text_sample['question']
 
             decoded_preds, decoded_labels = postprocess_text([text_out], [text_in])
-            result = self.bleu_metric.compute(predictions=decoded_preds, references=decoded_labels)['score']
+            result = self.bleu_metric.compute(predictions=decoded_preds, references=decoded_labels)['score']/100
             rewards.append(result)
         return rewards
 
@@ -227,3 +231,9 @@ class CycleTrainer:
             reward = -1.0 if eval_results['exact'] == 0 else 1.0
             rewards.append(reward)
         return rewards
+
+    def create_dummy_row(self, original_row):
+        db_id = original_row['db_id']
+        original_row['rule_label'] = self.dummy_queries[db_id]['rule_label']
+        original_row['query'] = self.dummy_queries[db_id]['query']
+        original_row['query_toks'] = self.dummy_queries[db_id]['query_toks']

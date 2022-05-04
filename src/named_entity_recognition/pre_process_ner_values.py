@@ -86,13 +86,10 @@ def match_values_in_database(db_value_finder, extracted_data, include_primary_ke
     _add_without_duplicates([(ner_number, exact_match) for ner_number in extracted_data.ner_numbers], candidates)
     _add_without_duplicates([(ner_price, exact_match) for ner_price in extracted_data.ner_prices], candidates)
 
-    tic_toc = TicToc()
-    tic_toc.tic()
     if len(candidates) == 0:
         matching_db_values = []
     else:
         matching_db_values = db_value_finder.find_similar_values_in_database(candidates, include_primary_keys)
-    tic_toc.toc()
 
     return matching_db_values
 

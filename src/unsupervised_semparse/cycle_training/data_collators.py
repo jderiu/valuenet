@@ -54,7 +54,7 @@ class DataCollatorSQL2Text:
                 original_rows.append(original_row)
             except RuntimeError as e:
                 print("Exception while building example (training): {}".format(e))
-        batch = Batch(examples, self.grammar, cuda=self.device)
+        batch = Batch(examples, self.grammar, cuda=self.device != 'cpu')
 
         input_ids_tensor, attention_mask_tensor, input_lengths = encode_input_sql2text(
             batch.all_question_tokens,

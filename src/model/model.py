@@ -23,7 +23,7 @@ class IRNet(BasicModel):
         self.device = device
         self.use_column_pointer = args.column_pointer
 
-        if args.cuda:
+        if device != 'cpu':
             self.new_long_tensor = torch.cuda.LongTensor
             self.new_tensor = torch.cuda.FloatTensor
         else:
@@ -114,7 +114,7 @@ class IRNet(BasicModel):
         args = self.args
         # now should implement the examples
         # "grammar" is the SemQL language. It contains lookup tables (string to id <--> id to string)
-        batch = Batch(examples, self.grammar, cuda=self.args.cuda)
+        batch = Batch(examples, self.grammar, cuda=self.device != 'cpu')
 
         table_appear_mask = batch.table_appear_mask
 
@@ -362,7 +362,7 @@ class IRNet(BasicModel):
             # Be aware that we don't calculate any loss for the sketch here, but only for the four leaf node actions C, T, A and V.
 
             table_appear_mask_val = torch.from_numpy(table_appear_mask)
-            if self.cuda:
+            if self.device != 'cpu':
                 table_appear_mask_val = table_appear_mask_val.cuda()
 
             # to my understanding the difference is not using pointer-networks or not, but using memory augmented pointer networks or just normal ones.
@@ -455,7 +455,7 @@ class IRNet(BasicModel):
         """
 
         # Seems we use the same Batch class to keep the implementation similar to the training case
-        batch = Batch([examples], self.grammar, cuda=self.args.cuda)
+        batch = Batch([examples], self.grammar, cuda=self.device != 'cpu')
 
         # next lines is exactly the same as in the training case. Encode the source sentence.
 
@@ -748,7 +748,7 @@ class IRNet(BasicModel):
 
             table_appear_mask_val = torch.from_numpy(table_appear_mask)
 
-            if self.args.cuda: table_appear_mask_val = table_appear_mask_val.cuda()
+            if self.device != 'cpu': table_appear_mask_val = table_appear_mask_val.cuda()
 
             # use the pointer network, similar to the training part.
             if self.use_column_pointer:
@@ -950,7 +950,7 @@ class IRNet(BasicModel):
         args = self.args
         # now should implement the examples
         # "grammar" is the SemQL language. It contains lookup tables (string to id <--> id to string)
-        batch = Batch(examples, self.grammar, cuda=self.args.cuda)
+        batch = Batch(examples, self.grammar, cuda=self.device != 'cpu')
 
         # We use our transformer encoder to encode question together with the schema (columns and tables). See "TransformerEncoder" for details
         question_encodings, column_encodings, table_encodings, value_encodings, transformer_pooling_output, question_token_lengths = self.encoder(
