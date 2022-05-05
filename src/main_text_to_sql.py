@@ -113,48 +113,33 @@ if __name__ == '__main__':
     device, n_gpu = setup_device()
     set_seed_everywhere(args.seed, n_gpu)
 
-    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
+    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy, train_db_id=args.train_db_id)
 
     grammar = semQL.Grammar()
 
     ignore_keys_for_eval = ['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions']
-    if args.gen_type == 'encoder_decoder':
-        metrics_fn = compute_metrics
-        encoder_tokenizer = AutoTokenizer.from_pretrained(args.encoder_pretrained_model, add_prefix_space=True)
-        decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model)
-        if decoder_tokenizer.pad_token_id is None:
-            decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
-        model = EncoderDecoderModel.from_encoder_decoder_pretrained(
-            args.encoder_pretrained_model, args.decoder_pretrained_model
-        )
-        model.to(device)
+    ignore_keys_for_eval.append('logits')
+    metrics_fn = compute_metrics_decode_only
+    decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model, add_prefix_space=True)
+    decoder_tokenizer.padding_side = 'left'
+    if decoder_tokenizer.pad_token_id is None:
+        decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
+    if decoder_tokenizer.sep_token_id is None:
+        decoder_tokenizer.sep_token = decoder_tokenizer.bos_token
 
-        data_collator = DataCollatorForSQL2Text(
-            encoder_tokenizer=encoder_tokenizer,
-            decoder_tokenizer=decoder_tokenizer,
-            model=model,
-            grammar=grammar,
-            schema=table_data,
-            device=device
-        )
-    else:
-        ignore_keys_for_eval.append('logits')
-        metrics_fn = compute_metrics_decode_only
-        decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_pretrained_model, add_prefix_space=True)
-        decoder_tokenizer.padding_side = 'left'
-        if decoder_tokenizer.pad_token_id is None:
-            decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
-        if decoder_tokenizer.sep_token_id is None:
-            decoder_tokenizer.sep_token = decoder_tokenizer.bos_token
+    if args.model_to_load is None:
         model = GPT2LMHeadModel.from_pretrained(args.decoder_pretrained_model)
-        model.to(device)
-        data_collator = DataCollartorForLMSQL2Text(
-            tokenizer=decoder_tokenizer,
-            model=model,
-            grammar=grammar,
-            schema=table_data,
-            device=device
-        )
+    else:
+        model = GPT2LMHeadModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
+
+    model.to(device)
+    data_collator = DataCollartorForLMSQL2Text(
+        tokenizer=decoder_tokenizer,
+        model=model,
+        grammar=grammar,
+        schema=table_data,
+        device=device
+    )
 
     pytorch_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     pytorch_total_params = sum(p.numel() for p in model.parameters())
