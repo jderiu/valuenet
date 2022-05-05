@@ -11,15 +11,10 @@ from src.synthetic_data.gpt2_data_collator import DataCollartorForLMSQL2Text
 from src.spider import spider_utils
 from tqdm import tqdm
 
-def generate_single_text(sql, db_id):
-    pass
-
-
 def main():
     args = read_arguments_evaluation()
 
     device, n_gpu = setup_device()
-    device = 'cpu'
     set_seed_everywhere(args.seed, n_gpu)
 
     table_path = os.path.join(args.data_dir, "original", "tables.json")
