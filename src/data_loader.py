@@ -75,6 +75,10 @@ class CurriculumIterator():
         for candidate in candidates:
             self.sample_id_to_box[candidate] = self.current_difficulty
 
+    def get_deck_size(self):
+        deck_size = sum([len(box) for box in self.boxes])
+        return deck_size
+
     def update_difficulty(self):
         self.current_db_pointer = (self.current_db_pointer + 1) % len(self.db_names)
         if self.current_db_pointer == 0:

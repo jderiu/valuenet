@@ -54,8 +54,7 @@ class CycleTrainer:
             args.scheduler_gamma
         )
 
-        self.gpt2_optimizer, self.gpt2_scheduler = build_optimizer_base(gpt2_model, num_train_steps, args.lr_base,
-                                                                        args.scheduler_gamma)
+        self.gpt2_optimizer, self.gpt2_scheduler = build_optimizer_base(gpt2_model, num_train_steps, args.lr_base, args.scheduler_gamma)
         self.gpt2_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
                                                      growth_interval=2000, enabled=True)
         self.ir_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
@@ -113,11 +112,15 @@ class CycleTrainer:
                 else:
                     self.train_loader.update_sample(sample_id, False)
 
+            bos_distr = self.train_loader.get_box_distribution()
+            bin_nr = [i for i in range(len(self.train_loader.boxes) + 1)]
             logs = {**ir_res, **gpt_train_res}
             logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
             logs['text_rewards_torch'] = float(text_rewards_torch.mean())
             logs['bleu_baseline'] = float(bleu_baseline)
             logs['sql_baseline'] = float(sql_baseline)
+            logs['box_distr:'] = wandb.Histogram(np_histogram=(bos_distr, bin_nr))
+            logs['deck_size'] = self.train_loader.get_deck_size()
             wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):
