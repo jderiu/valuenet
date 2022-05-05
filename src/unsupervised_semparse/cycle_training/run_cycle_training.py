@@ -49,7 +49,7 @@ if __name__ == '__main__':
     ir_model.load_state_dict(torch.load(args.ir_model_to_load), strict=False)
     print("Load pre-trained IR model from '{}'".format(args.ir_model_to_load))
     #reinitialize encoder to BART (encoder was ruined to learn SQL)
-    ir_model.init_encoder()
+    #ir_model.init_encoder()
     print("Re-loaded BART encoder")
     ir_model.to(device)
 
