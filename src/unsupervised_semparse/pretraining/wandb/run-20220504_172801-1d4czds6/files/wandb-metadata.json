@@ -1,0 +1,24 @@
+{
+    "os": "Windows-10-10.0.22000-SP0",
+    "python": "3.7.11",
+    "heartbeatAt": "2022-05-04T15:28:04.830226",
+    "startedAt": "2022-05-04T15:28:01.195560",
+    "docker": null,
+    "gpu": "NVIDIA GeForce RTX 2060",
+    "gpu_count": 1,
+    "cpu_count": 16,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "D:/01Text2SQL/valuenet/src/unsupervised_semparse/pretraining/run_pretraining.py",
+    "codePath": "src\\unsupervised_semparse\\pretraining\\run_pretraining.py",
+    "git": {
+        "remote": "git@github.com:jderiu/valuenet.git",
+        "commit": "100b4495a1aa47f34a64141ee0f93a3f43685667"
+    },
+    "email": "jderiu@users.noreply.github.com",
+    "root": "D:/01Text2SQL/valuenet",
+    "host": "Laptop-4-J",
+    "username": "jande",
+    "executable": "C:\\Users\\jande\\anaconda3\\envs\\valuenet\\python.exe"
+}

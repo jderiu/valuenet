@@ -2,8 +2,8 @@ import argparse
 import json
 import os
 
-from preprocessing.sql2SemQL import Parser
-from preprocessing.utils import load_dataSets
+from src.preprocessing.sql2SemQL import Parser
+from src.preprocessing.utils import load_dataSets
 
 
 def validate_values_contained_in_ner(ner_entities, values_ground_truth):

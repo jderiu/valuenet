@@ -6,10 +6,10 @@ from unittest import TestCase
 
 import psycopg2
 
-from intermediate_representation.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, V, Root1
-from synthetic_data.sample_queries.sample_query import filter_column_value_quadruplets, resolve_quadruplet, \
+from src.intermediate_representation.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, V, Root1
+from src.synthetic_data.sample_queries.sample_query import filter_column_value_quadruplets, resolve_quadruplet, \
     find_unused_tables_closest_to_used_tables, replace_logic_names
-from tools.transform_generative_schema import GenerativeSchema
+from src.tools.transform_generative_schema import GenerativeSchema
 
 
 class Test(TestCase):

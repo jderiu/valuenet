@@ -8,10 +8,10 @@ import psycopg2
 
 random.seed(42)
 
-from intermediate_representation.sem2sql.sem2SQL import transform, build_graph
+from src.intermediate_representation.sem2sql.sem2SQL import transform, build_graph
 # DO NOT remove this imports! They are use by the dynamic eval() command in to_semql()
-from intermediate_representation.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, V, Root1, Action
-from tools.transform_generative_schema import GenerativeSchema
+from src.intermediate_representation.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, V, Root1, Action
+from src.tools.transform_generative_schema import GenerativeSchema
 
 
 def to_semql(semql_st: str):
