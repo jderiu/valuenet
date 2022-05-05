@@ -120,7 +120,8 @@ class CycleTrainer:
             logs['bleu_baseline'] = float(bleu_baseline)
             logs['sql_baseline'] = float(sql_baseline)
             logs['box_distr:'] = wandb.Histogram(np_histogram=(bos_distr, bin_nr))
-            logs['deck_size'] = self.train_loader.get_deck_size()
+            logs['deck_size'] = int(bos_distr.sum())
+            logs['deck_size_0'] = int(bos_distr[0])
             wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):

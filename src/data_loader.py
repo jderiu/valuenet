@@ -57,6 +57,7 @@ class CurriculumIterator():
         self.boxes = [set() for _ in range(n_boxes)]
         self.current_difficulty = 0
         self.current_db_pointer = 0
+        self.steps_since_last_diff_update = 0
         self.inverse_difficulty_map = {v: k for k, v in self.difficulty_map.items()}
         self.sample_id_to_box = {}
         self.initialize()
@@ -80,6 +81,7 @@ class CurriculumIterator():
         return deck_size
 
     def update_difficulty(self):
+        self.steps_since_last_diff_update = 0
         self.current_db_pointer = (self.current_db_pointer + 1) % len(self.db_names)
         if self.current_db_pointer == 0:
             self.current_difficulty = min(self.current_difficulty + 1, self.difficulty_map['extra'])
@@ -117,6 +119,7 @@ class CurriculumIterator():
         return box_probs
 
     def update_sample(self, sample_id, is_correct):
+        self.steps_since_last_diff_update += 1
         if is_correct:
             box_id = self.sample_id_to_box[sample_id]
             #already in best box
@@ -135,5 +138,5 @@ class CurriculumIterator():
             self.sample_id_to_box[sample_id] = box_id - 1
 
         n_samples_in_pool = sum([len(b) for b in self.boxes])
-        if len(self.boxes[0]) < n_samples_in_pool*0.25:
+        if len(self.boxes[0]) < n_samples_in_pool*0.25 or self.steps_since_last_diff_update > n_samples_in_pool:
             self.update_difficulty()
