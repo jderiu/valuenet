@@ -57,6 +57,8 @@ def read_arguments_train():
     parser.add_argument('--seed', default=90, type=int)
     parser.add_argument('--toy', default=False, action='store_true')
     parser.add_argument('--data_set', default='spider', type=str)
+    parser.add_argument('--train_db_id', default=None, type=str)
+    parser.add_argument('--model_to_load', default=None, type=str)
 
     # training & optimizer configuration
     parser.add_argument('--batch_size', default=1, type=int)

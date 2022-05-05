@@ -34,12 +34,14 @@ if __name__ == '__main__':
     device, n_gpu = setup_device()
     set_seed_everywhere(args.seed, n_gpu)
 
-    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
+    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy, train_db_id=args.train_db_id)
     train_loader, dev_loader = get_data_loader(sql_data, val_sql_data, args.batch_size, True, False)
 
     grammar = semQL.Grammar()
     model = IRNet(args, device, grammar)
     model.to(device)
+    if args.model_to_load is not None:
+        model.load_state_dict(torch.load(args.model_to_load), strict=False)
 
     # track the model
     wandb.watch(model, log='parameters')
