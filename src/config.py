@@ -75,6 +75,7 @@ def read_arguments_train():
     parser.add_argument('--loss_epoch_threshold', default=50, type=int)
     parser.add_argument('--sketch_loss_weight', default=1.0, type=float)
     parser.add_argument('--model_to_load', type=str, default=None)
+    parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('--pretrain_epochs', type=int, default=0)
     parser.add_argument('--eval_every_n_steps', type=int, default=1000)
 
