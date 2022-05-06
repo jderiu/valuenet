@@ -59,9 +59,9 @@ class CycleTrainer:
                                                      growth_interval=2000, enabled=True)
         self.ir_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
                                                    growth_interval=2000, enabled=True)
-        #self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
+        self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
         db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
-        self.train_loader, self.dev_loader = get_random_sampler(train_data, valid_data, args.batch_size, db_names_to_schema, 5)
+        #self.train_loader, self.dev_loader = get_random_sampler(train_data, valid_data, args.batch_size, db_names_to_schema, 5)
         self.text2sql_collator = DataCollatorText2SQL(
             grammar=grammar,
             schema=schema,
@@ -80,8 +80,8 @@ class CycleTrainer:
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs)/self.args.batch_size)
         for step in tqdm(range(num_train_steps), desc="Training", total=num_train_steps):
-            sample_ids = self.train_loader.sample_batch(self.args.batch_size)
-            batch = [self.train_loader.dataset[sample_id] for sample_id in sample_ids]
+            #sample_ids = self.train_loader.sample_batch(self.args.batch_size)
+            batch = next(iter(self.train_loader))
             if step % 2 == 0:
                 fake_text_batch = self.sql2text(batch)
                 cycled_sql_batch = self.text2sql(fake_text_batch)
