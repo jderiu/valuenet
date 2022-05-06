@@ -47,6 +47,9 @@ class RandomIterator():
     def sample_batch(self, batch_size):
         return random.sample(self.sample_ids, batch_size)
 
+    def __len__(self):
+        return len(self.dataset)
+
 class CurriculumIterator():
 
     difficulty_map = {
