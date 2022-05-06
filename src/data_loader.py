@@ -23,7 +23,7 @@ def get_data_loader(data_train, data_dev, batch_size, shuffle_train=True, shuffl
 
 
 def get_random_sampler(data_train, data_dev, batch_size, db_names_to_schema, n_boxes) -> (torch.utils.data.RandomSampler, torch.utils.data.DataLoader):
-    train_loader = CurriculumIterator(data_train, db_names_to_schema, n_boxes=n_boxes)
+    train_loader = RandomIterator(data_train, batch_size)
     dev_loader = torch.utils.data.DataLoader(
         batch_size=batch_size,
         dataset=data_dev,
@@ -33,6 +33,19 @@ def get_random_sampler(data_train, data_dev, batch_size, db_names_to_schema, n_b
 
     return train_loader, dev_loader
 
+
+class RandomIterator():
+    def __init__(
+            self,
+            dataset,
+            batch_size
+    ):
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.sample_ids = list(range(len(self.dataset)))
+
+    def sample_batch(self, batch_size):
+        return random.sample(self.sample_ids, batch_size)
 
 class CurriculumIterator():
 
