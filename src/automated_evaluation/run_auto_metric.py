@@ -39,6 +39,7 @@ if __name__ == '__main__':
     write_config_to_file(args, output_path)
 
     device, n_gpu = setup_device()
+    device = 'cpu'
     set_seed_everywhere(args.seed, n_gpu)
 
     sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
@@ -48,6 +49,7 @@ if __name__ == '__main__':
 
     ignore_keys_for_eval = ['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions']
     decoder_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large', add_prefix_space=True)
+    decoder_tokenizer.sep_token = decoder_tokenizer.cls_token
     model = BartForSequenceClassification.from_pretrained('facebook/bart-large')
     model.to(device)
 
@@ -74,7 +76,7 @@ if __name__ == '__main__':
         evaluation_strategy="epoch",
         eval_accumulation_steps=args.batch_size,
         no_cuda=nocuda,
-        fp16=True,
+        #fp16=True,
         save_strategy="epoch",
         ignore_data_skip=True,
         logging_steps=10,
