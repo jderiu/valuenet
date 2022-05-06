@@ -185,8 +185,7 @@ class CycleTrainer:
                 pad_token_id=self.gpt2_tokenizer.pad_token_id,
             )
         decoded_out = self.gpt2_tokenizer.batch_decode(generated_out, skip_special_tokens=True)
-        pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in
-                          decoded_out]
+        pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
         for i, pred_out in enumerate(pred_batch_out):
             if len(pred_out) < 2:
                 pred_out = 'What is this?'

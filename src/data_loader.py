@@ -22,7 +22,7 @@ def get_data_loader(data_train, data_dev, batch_size, shuffle_train=True, shuffl
     return train_loader, dev_loader
 
 
-def get_random_sampler(data_train, data_dev, batch_size, db_names_to_schema, n_boxes) -> (torch.utils.data.RandomSampler, torch.utils.data.DataLoader):
+def get_random_sampler(data_train, data_dev, batch_size, db_names_to_schema, n_boxes):
     train_loader = RandomIterator(data_train, batch_size)
     dev_loader = torch.utils.data.DataLoader(
         batch_size=batch_size,
