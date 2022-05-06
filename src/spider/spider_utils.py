@@ -10,7 +10,7 @@
 """
 
 import json
-import time
+import random
 
 import copy
 import numpy as np
@@ -18,9 +18,7 @@ import os
 import torch
 from nltk.stem import WordNetLemmatizer
 from src.spider.test_suite_eval.process_sql import get_schema, Schema, get_sql
-# from dataset import Example
-# from rule import lf
-# from rule.semQL import Sup, Sel, Order, Root, Filter, A, N, C, T, Root1
+from collections import defaultdict
 
 wordnet_lemmatizer = WordNetLemmatizer()
 
@@ -153,6 +151,26 @@ def load_dataset(dataset_dir, use_small=False, train_db_id=None):
         train_sql_data = [x for x in train_sql_data if x['db_id'] == train_db_id]
     return train_sql_data, train_table_data, val_sql_data, val_table_data
 
+
+def negative_sampling_augmentation(sql_data, aug_num=1):
+    augmented_dataset = []
+    db_id_to_sql_data = defaultdict(lambda: [])
+    for data_row in sql_data:
+        db_id_to_sql_data[data_row['db_id']].append(data_row)
+
+    for data_row in sql_data:
+        negative_samples = random.sample(db_id_to_sql_data[data_row['db_id']], aug_num)
+        data_row['label'] = 1
+        augmented_dataset.append(data_row)
+        for i in range(aug_num):
+            new_data_row = copy.deepcopy(data_row)
+            new_data_row['label'] = 0
+            new_data_row['query'] = negative_samples[i]['query']
+            new_data_row['query_toks'] = negative_samples[i]['query_toks']
+            new_data_row['query_toks_no_value'] = negative_samples[i]['query_toks_no_value']
+            augmented_dataset.append(new_data_row)
+    print("Augmented dataset size: {}".format(len(augmented_dataset)))
+    return augmented_dataset
 
 def load_schema(schema_path):
 
