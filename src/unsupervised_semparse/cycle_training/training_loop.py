@@ -218,15 +218,16 @@ class CycleTrainer:
                 full_prediction = ""
 
             if not full_prediction == "":
-                # here we set assemble the predicted sketch actions as string
-                original_row['rule_label'] = full_prediction
-                original_row['sketch_result'] = " ".join(str(x) for x in results_all[1])
-                original_row['model_result'] = full_prediction
-
-                sql = _semql_to_sql(original_row, self.schema).replace('"', '')
-
-                original_row['query'] = sql
-                original_row['query_toks'] = tokenize(sql)
+                # here we set assemble the predicted sketch actions as strings
+                try:
+                    sql = _semql_to_sql(original_row, self.schema).replace('"', '')
+                    original_row['rule_label'] = full_prediction
+                    original_row['sketch_result'] = " ".join(str(x) for x in results_all[1])
+                    original_row['model_result'] = full_prediction
+                    original_row['query'] = sql
+                    original_row['query_toks'] = tokenize(sql)
+                except Exception as e:
+                    self.create_dummy_row(original_row)
             else:
                 self.create_dummy_row(original_row)
             fake_batch.append(original_row)
