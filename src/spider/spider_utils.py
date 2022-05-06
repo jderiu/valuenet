@@ -165,9 +165,11 @@ def negative_sampling_augmentation(sql_data, aug_num=1):
         for i in range(aug_num):
             new_data_row = copy.deepcopy(data_row)
             new_data_row['label'] = 0
-            new_data_row['query'] = negative_samples[i]['query']
-            new_data_row['query_toks'] = negative_samples[i]['query_toks']
-            new_data_row['query_toks_no_value'] = negative_samples[i]['query_toks_no_value']
+            new_data_row['question'] = negative_samples[i]['question']
+            new_data_row['question_toks'] = negative_samples[i]['question_toks']
+            new_data_row['question_arg'] = negative_samples[i]['question_arg']
+            new_data_row['question_arg_type'] = negative_samples[i]['question_arg_type']
+            new_data_row['values'] = negative_samples[i]['values']
             augmented_dataset.append(new_data_row)
     print("Augmented dataset size: {}".format(len(augmented_dataset)))
     return augmented_dataset
