@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ignore_keys_for_eval = ['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions']
     decoder_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large', add_prefix_space=True)
     decoder_tokenizer.sep_token = decoder_tokenizer.cls_token
-    model = BartForSequenceClassification.from_pretrained('facebook/bart-large')
+    model = BartForSequenceClassification.from_pretrained('facebook/bart-base')
     model.to(device)
     model.config.problem_type = 'single_label_classification'
     data_collator = DataCollatorSQLPlusText(
