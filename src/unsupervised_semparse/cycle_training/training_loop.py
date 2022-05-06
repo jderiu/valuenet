@@ -109,22 +109,16 @@ class CycleTrainer:
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
 
-            for i, sample_id in enumerate(sample_ids):
-                if sql_rewards[i] == 1 or text_rewards[i] > 0.2:
-                    self.train_loader.update_sample(sample_id, True)
-                else:
-                    self.train_loader.update_sample(sample_id, False)
-
-            bos_distr = self.train_loader.get_box_distribution()
-            bin_nr = [i for i in range(len(self.train_loader.boxes) + 1)]
+            #bos_distr = self.train_loader.get_box_distribution()
+            #bin_nr = [i for i in range(len(self.train_loader.boxes) + 1)]
             logs = {**ir_res, **gpt_train_res}
             logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
             logs['text_rewards_torch'] = float(text_rewards_torch.mean())
             logs['bleu_baseline'] = float(bleu_baseline)
             logs['sql_baseline'] = float(sql_baseline)
-            logs['box_distr:'] = wandb.Histogram(np_histogram=(bos_distr, bin_nr))
-            logs['deck_size'] = int(bos_distr.sum())
-            logs['deck_size_0'] = int(bos_distr[0])
+            #logs['box_distr:'] = wandb.Histogram(np_histogram=(bos_distr, bin_nr))
+            #logs['deck_size'] = int(bos_distr.sum())
+            #logs['deck_size_0'] = int(bos_distr[0])
             wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):
