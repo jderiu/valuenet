@@ -52,7 +52,7 @@ if __name__ == '__main__':
     decoder_tokenizer.sep_token = decoder_tokenizer.cls_token
     model = BartForSequenceClassification.from_pretrained('facebook/bart-large')
     model.to(device)
-
+    model.config.problem_type = 'single_label_classification'
     data_collator = DataCollatorSQLPlusText(
         tokenizer=decoder_tokenizer,
         grammar=grammar,
