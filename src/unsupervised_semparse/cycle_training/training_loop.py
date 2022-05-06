@@ -80,43 +80,34 @@ class CycleTrainer:
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs)/self.args.batch_size)
         for step in tqdm(range(num_train_steps), desc="Training", total=num_train_steps):
-            sample_ids = self.train_loader.sample_batch(2*self.args.batch_size)
-            batch_0 = [self.train_loader.dataset[sample_id] for sample_id in sample_ids[:self.args.batch_size]]
-            batch_1 = [self.train_loader.dataset[sample_id] for sample_id in sample_ids[self.args.batch_size:]]
-
-            fake_text_batch = self.sql2text(batch_0)
-            fake_sql_batch = self.text2sql(batch_1)
-
-            cycled_sql_batch = self.text2sql(fake_text_batch)
-            cycled_text_batch = self.sql2text(fake_sql_batch)
-
-            sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
-            text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
-
-            sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
-            text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
-
-            bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
-            sql_baseline = sum(self.sql_baseline) / len(self.sql_baseline)
-            ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, bleu_baseline)
-            gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
-
-            self.bleu_baseline.extend(text_rewards)
-            self.sql_baseline.extend(sql_rewards_torch)
+            sample_ids = self.train_loader.sample_batch(self.args.batch_size)
+            batch = [self.train_loader.dataset[sample_id] for sample_id in sample_ids]
+            if step % 2 == 0:
+                fake_text_batch = self.sql2text(batch)
+                cycled_sql_batch = self.text2sql(fake_text_batch)
+                sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
+                sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
+                sql_baseline = sum(self.sql_baseline) / len(self.sql_baseline)
+                gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
+                self.sql_baseline.extend(sql_rewards_torch)
+                logs = gpt_train_res
+                logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
+                logs['sql_baseline'] = float(sql_baseline)
+            else:
+                fake_sql_batch = self.text2sql(batch)
+                cycled_text_batch = self.sql2text(fake_sql_batch)
+                text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
+                text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
+                bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
+                ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, bleu_baseline)
+                self.bleu_baseline.extend(text_rewards)
+                logs = ir_res
+                logs['text_rewards_torch'] = float(text_rewards_torch.mean())
+                logs['bleu_baseline'] = float(bleu_baseline)
 
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
 
-            #bos_distr = self.train_loader.get_box_distribution()
-            #bin_nr = [i for i in range(len(self.train_loader.boxes) + 1)]
-            logs = {**ir_res, **gpt_train_res}
-            logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
-            logs['text_rewards_torch'] = float(text_rewards_torch.mean())
-            logs['bleu_baseline'] = float(bleu_baseline)
-            logs['sql_baseline'] = float(sql_baseline)
-            #logs['box_distr:'] = wandb.Histogram(np_histogram=(bos_distr, bin_nr))
-            #logs['deck_size'] = int(bos_distr.sum())
-            #logs['deck_size_0'] = int(bos_distr[0])
             wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):
