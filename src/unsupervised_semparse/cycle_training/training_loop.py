@@ -80,11 +80,9 @@ class CycleTrainer:
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs)/self.args.batch_size)
         for step in tqdm(range(num_train_steps), desc="Training", total=num_train_steps):
-            sample_ids_0 = self.train_loader.sample_batch(self.args.batch_size)
-            batch_0 = [self.train_loader.dataset[sample_id] for sample_id in sample_ids_0]
-
-            sample_ids_1 = self.train_loader.sample_batch(self.args.batch_size)
-            batch_1 = [self.train_loader.dataset[sample_id] for sample_id in sample_ids_1]
+            sample_ids = self.train_loader.sample_batch(2*self.args.batch_size)
+            batch_0 = [self.train_loader.dataset[sample_id] for sample_id in sample_ids[:self.args.batch_size]]
+            batch_1 = [self.train_loader.dataset[sample_id] for sample_id in sample_ids[self.args.batch_size:]]
 
             fake_text_batch = self.sql2text(batch_0)
             fake_sql_batch = self.text2sql(batch_1)
