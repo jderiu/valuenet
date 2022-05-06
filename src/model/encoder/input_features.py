@@ -134,7 +134,7 @@ def _tokenize_question(question, tokenizer, add_sep_token=True):
     question_tokenized_ids = question_tokenized.data['input_ids']
 
     if add_sep_token:
-        question_tokenized_ids = question_tokenized_ids + [tokenizer.sep_token_id]
+        question_tokenized_ids = question_tokenized_ids + [tokenizer.eos_token_id]
     question_span_lengths = [1] * len(question_tokenized_ids)
     return question_tokenized_ids, question_span_lengths
 
