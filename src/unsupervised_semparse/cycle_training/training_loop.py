@@ -78,7 +78,7 @@ class CycleTrainer:
         self.bleu_baseline = [0.1]
 
     def train(self):
-        num_train_steps = int((len(self.train_loader) * self.args.num_epochs)/self.args.batch_size)
+        num_train_steps = int((len(self.train_loader) * self.args.num_epochs))
         for step in tqdm(range(num_train_steps), desc="Training", total=num_train_steps):
             #sample_ids = self.train_loader.sample_batch(self.args.batch_size)
             batch = next(iter(self.train_loader))
