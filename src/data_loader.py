@@ -82,6 +82,18 @@ class CurriculumIterator():
         return len(self.dataset)
 
     def initialize(self):
+        candidates = [x['id'] for x in self.dataset if x['difficulty'] == self.inverse_difficulty_map[self.current_difficulty]]
+        self.boxes[0].update(candidates)
+        for candidate in candidates:
+            self.sample_id_to_box[candidate] = 0
+
+    def update_difficulty(self):
+        old_difficulty = self.current_difficulty
+        self.current_difficulty = min(self.current_difficulty + 1, self.difficulty_map['extra'])
+        if old_difficulty != self.current_difficulty:
+            self.initialize()
+
+    def initialize_(self):
         candidates = []
         while len(candidates) == 0:
             curr_db_name = self.db_names[self.current_db_pointer]
@@ -96,7 +108,7 @@ class CurriculumIterator():
         deck_size = sum([len(box) for box in self.boxes])
         return deck_size
 
-    def update_difficulty(self):
+    def update_difficulty_(self):
         self.steps_since_last_diff_update = 0
         self.current_db_pointer = (self.current_db_pointer + 1) % len(self.db_names)
         if self.current_db_pointer == 0:
@@ -154,7 +166,7 @@ class CurriculumIterator():
             self.sample_id_to_box[sample_id] = box_id - 1
 
         n_samples_in_pool = sum([len(b) for b in self.boxes])
-        if len(self.boxes[0]) < n_samples_in_pool*0.25 or self.steps_since_last_diff_update > n_samples_in_pool:
+        if len(self.boxes[0]) < n_samples_in_pool*0.5:
             self.update_difficulty()
 
     def get_logging_info(self):
