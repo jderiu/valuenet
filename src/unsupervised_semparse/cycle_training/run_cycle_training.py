@@ -30,7 +30,7 @@ if __name__ == '__main__':
     wandb.config.update(args)
     write_config_to_file(args, output_path)
     device, n_gpu = setup_device()
-    #device = 'cpu'
+    device = 'cpu'
     set_seed_everywhere(args.seed, n_gpu)
     sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
     #adapt this later for curriculum learning (start with easy and then increase difficulty)

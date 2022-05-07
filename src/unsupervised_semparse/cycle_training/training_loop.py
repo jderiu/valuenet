@@ -5,6 +5,7 @@ from src.unsupervised_semparse.cycle_training.data_collators import DataCollator
 from src.spider.test_suite_eval.process_sql import tokenize
 from src.manual_inference.helper import tokenize_question
 from src.spider.spider_utils import load_all_schema_data
+from src.evaluation import evaluate
 from src.unsupervised_semparse.cycle_training.utils import get_values, postprocess_text
 from src.spider.test_suite_eval.evaluation import match_evaluation_single, build_foreign_key_map_from_json
 from datasets import load_metric
@@ -96,7 +97,6 @@ class CycleTrainer:
                 logs['sql_baseline'] = float(sql_baseline)
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, sql_rewards[idx] == 1)
-
             else:
                 fake_sql_batch = self.text2sql(batch)
                 cycled_loss = self.sql2text_loss(fake_sql_batch)
@@ -119,6 +119,9 @@ class CycleTrainer:
             data_loader_logs = self.train_loader.get_logging_info()
             logs = {**logs, **data_loader_logs}
             wandb.log(logs)
+
+            if step % 100 == 0 and step != 0:
+                self.evaluation()
 
     def train_sql2text(self, batch, rewards_batch, baseline):
         examples, original_rows = self.sql2text_collator(batch, is_eval=False)
@@ -296,3 +299,14 @@ class CycleTrainer:
         original_row['rule_label'] = self.dummy_queries[db_id]['rule_label']
         original_row['query'] = self.dummy_queries[db_id]['query']
         original_row['query_toks'] = self.dummy_queries[db_id]['query_toks']
+
+    def evaluation(self):
+        sketch_acc, acc, _, predictions = evaluate(self.ir_model,
+                                                   self.dev_loader,
+                                                   self.schema,
+                                                   self.args.beam_size)
+
+        wandb.log({
+            'eval/sketch_acc': sketch_acc,
+            'eval/acc': acc,
+        })
