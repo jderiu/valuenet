@@ -160,7 +160,7 @@ class CurriculumIterator():
     def get_logging_info(self):
         bos_distr = self.get_box_distribution()
         bin_nr = [i for i in range(len(self.boxes) + 1)]
-        box_size = [len(box) for box in self.boxes]
+        box_size = sum(len(box) for box in self.boxes)
         return {
             'current_difficulty': self.current_difficulty,
             'current_db_pointer': self.current_db_pointer,
