@@ -145,6 +145,8 @@ class CycleTrainer:
             self.gpt2_optimizer.step()
         else:
             self.gpt2_scaler.scale(loss_adv).backward()
+            self.gpt2_scaler.unscale_(self.gpt2_optimizer)
+            torch.nn.utils.clip_grad_norm_(self.gpt2_model.parameters(), self.args.clip_grad)
             self.gpt2_scaler.step(self.gpt2_optimizer)
             self.gpt2_scaler.update()
 
@@ -188,6 +190,8 @@ class CycleTrainer:
             self.ir_optimizer.step()
         else:
             self.ir_scaler.scale(loss_adv).backward()
+            self.ir_scaler.unscale_(self.ir_optimizer)
+            torch.nn.utils.clip_grad_norm_(self.ir_model.parameters(), self.args.clip_grad)
             self.ir_scaler.step(self.ir_optimizer)
             self.ir_scaler.update()
 
