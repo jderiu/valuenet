@@ -93,8 +93,8 @@ class CycleTrainer:
                 sql_baseline = sum(self.sql_baseline) / len(self.sql_baseline)
                 gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
                 logs = gpt_train_res
-                logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
-                logs['sql_baseline'] = float(sql_baseline)
+                logs['train/sql_rewards_torch'] = float(sql_rewards_torch.mean())
+                logs['train/sql_baseline'] = float(sql_baseline)
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, sql_rewards[idx] == 1)
             else:
@@ -109,19 +109,21 @@ class CycleTrainer:
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, bleu_baseline)
                 logs = ir_res
-                logs['text_rewards_torch'] = float(text_rewards_torch.mean())
-                logs['bleu_baseline'] = float(bleu_baseline)
+                logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
+                logs['train/bleu_baseline'] = float(bleu_baseline)
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > 0.2)
 
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
             data_loader_logs = self.train_loader.get_logging_info()
-            logs = {**logs, **data_loader_logs}
-            wandb.log(logs)
 
+            logs = {**logs, **data_loader_logs}
             if step % 100 == 0 and step != 0:
-                self.evaluation()
+                eval_logs = self.evaluation()
+                logs = {**logs, **eval_logs}
+
+            wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):
         examples, original_rows = self.sql2text_collator(batch, is_eval=False)
@@ -154,8 +156,8 @@ class CycleTrainer:
             self.gpt2_scaler.update()
 
         return {
-            'gpt2_loss': float(loss.mean()),
-            'gpt2_loss_adv': float(loss_adv.mean()),
+            'gpt2/loss': float(loss.mean()),
+            'gpt2/loss_adv': float(loss_adv.mean()),
         }
 
     def sql2text_loss(self, batch):
@@ -199,9 +201,9 @@ class CycleTrainer:
             self.ir_scaler.update()
 
         return {
-            'ir_loss_rl': float(loss_adv),
-            'ir_loss_sketch': mean_sketch_loss,
-            'ir_loss_lf': mean_lf_loss
+            'ir/loss_rl': float(loss_adv),
+            'ir/loss_sketch': mean_sketch_loss,
+            'ir/loss_lf': mean_lf_loss
         }
 
     def sql2text(self, batch):
@@ -305,8 +307,7 @@ class CycleTrainer:
                                                    self.dev_loader,
                                                    self.schema,
                                                    self.args.beam_size)
-
-        wandb.log({
+        return {
             'eval/sketch_acc': sketch_acc,
             'eval/acc': acc,
-        })
+        }

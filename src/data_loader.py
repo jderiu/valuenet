@@ -162,9 +162,9 @@ class CurriculumIterator():
         bin_nr = [i for i in range(len(self.boxes) + 1)]
         box_size = sum(len(box) for box in self.boxes)
         return {
-            'current_difficulty': self.current_difficulty,
-            'current_db_pointer': self.current_db_pointer,
-            'box_distr':  wandb.Histogram(np_histogram=(bos_distr, bin_nr)),
-            'box_0': len(self.boxes[0]),
-            'box_size': box_size,
+            'data_loader/current_difficulty': self.current_difficulty,
+            'data_loader/current_db_pointer': self.current_db_pointer,
+            'data_loader/box_distr':  wandb.Histogram(np_histogram=(bos_distr, bin_nr)),
+            'data_loader/box_0': len(self.boxes[0]),
+            'data_loader/box_size': box_size,
         }
