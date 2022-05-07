@@ -100,11 +100,11 @@ class CycleTrainer:
             else:
                 fake_sql_batch = self.text2sql(batch)
                 cycled_loss = self.sql2text_loss(fake_sql_batch)
-                text_rewards_torch = 1 - cycled_loss
-                text_rewards = [float(x) for x in text_rewards_torch]
-                #cycled_text_batch = self.sql2text(fake_sql_batch)
-                #text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
-                #text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
+                #text_rewards_torch = 1 - cycled_loss
+                #text_rewards = [float(x) for x in text_rewards_torch]
+                cycled_text_batch = self.sql2text(fake_sql_batch)
+                text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
+                text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, bleu_baseline)
