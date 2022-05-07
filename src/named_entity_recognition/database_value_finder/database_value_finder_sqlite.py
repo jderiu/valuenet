@@ -15,7 +15,7 @@ NUM_CORES = multiprocessing.cpu_count()
 
 
 class DatabaseValueFinderSQLite(DatabaseValueFinder):
-    def __init__(self, database_folder, database_name, database_schema_path, max_results=10):
+    def __init__(self, database_folder, database_name, database_schema_path, max_results=10, use_paralelization=True):
 
         super().__init__(database_name, database_schema_path, max_results)
 
@@ -26,6 +26,7 @@ class DatabaseValueFinderSQLite(DatabaseValueFinder):
         self.exact_match_threshold = 1.0  # be a ware that an exact match is not case sensitive
         self.high_similarity_threshold = 0.9
         self.medium_similarity_threshold = 0.75
+        self.NUM_CORES = multiprocessing.cpu_count() if use_paralelization else 1
 
     def find_similar_values_in_database(self, potential_values, include_primary_keys):
         matching_values = set()
@@ -50,8 +51,8 @@ class DatabaseValueFinderSQLite(DatabaseValueFinder):
                     # The overhead of parallelization only helps after a certain size of data. Example: a table with ~ 300k entries and 4 columns takes ~20s with a single core.
                     # By using all 12 virtual cores we get down to ~12s. But the table has only 60k entries and 4 columns, the overhead of parallelization is larger than calculating
                     # everything on a single core (~3.8s vs. ~4.1s)
-                    if len(data) > 80000:
-                        matches = Parallel(n_jobs=NUM_CORES)(delayed(self._find_matches_in_column)(table, column, column_idx, data, potential_values) for column_idx, column in enumerate(columns))
+                    if len(data) > 80000 and self.NUM_CORES > 1:
+                        matches = Parallel(n_jobs=self.NUM_CORES)(delayed(self._find_matches_in_column)(table, column, column_idx, data, potential_values) for column_idx, column in enumerate(columns))
                         print(f'Parallelization activated as table has {len(data)} rows.')
                     else:
                         matches = [self._find_matches_in_column(table, column, column_idx, data, potential_values) for column_idx, column in enumerate(columns)]

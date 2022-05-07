@@ -30,7 +30,7 @@ if __name__ == '__main__':
     wandb.config.update(args)
     write_config_to_file(args, output_path)
     device, n_gpu = setup_device()
-    #device = 'cpu'
+    device = 'cpu'
     set_seed_everywhere(args.seed, n_gpu)
     sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
     #adapt this later for curriculum learning (start with easy and then increase difficulty)
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     schemas_raw_spider, schemas_dict_spider, schema_path_spider, database_path_spider = get_schemas_spider()
     db_value_finders = {
-        db_name : DatabaseValueFinderSQLite(database_path_spider, db_name, schema_path_spider) for db_name in schemas_dict_spider.keys()
+        db_name : DatabaseValueFinderSQLite(database_path_spider, db_name, schema_path_spider, use_paralelization=False) for db_name in schemas_dict_spider.keys()
     }
 
     with open(os.path.join(args.data_dir, 'dummy_queries.json'), 'rt', encoding='utf-8') as f:

@@ -2,7 +2,7 @@ import torch, random
 import numpy as np
 from torch.utils.data import RandomSampler
 from src.spider.test_suite_eval.evaluation import Evaluator, convert_sql_to_dict
-
+import wandb
 
 def get_data_loader(data_train, data_dev, batch_size, shuffle_train=True, shuffle_dev=False) -> (torch.utils.data.DataLoader, torch.utils.data.DataLoader):
     train_loader = torch.utils.data.DataLoader(
@@ -23,7 +23,7 @@ def get_data_loader(data_train, data_dev, batch_size, shuffle_train=True, shuffl
 
 
 def get_random_sampler(data_train, data_dev, batch_size, db_names_to_schema, n_boxes):
-    train_loader = RandomIterator(data_train, batch_size)
+    train_loader = CurriculumIterator(data_train, db_names_to_schema, n_boxes)
     dev_loader = torch.utils.data.DataLoader(
         batch_size=batch_size,
         dataset=data_dev,
@@ -90,7 +90,7 @@ class CurriculumIterator():
                 self.current_db_pointer = (self.current_db_pointer + 1) % len(self.db_names)
         self.boxes[0].update(candidates)
         for candidate in candidates:
-            self.sample_id_to_box[candidate] = self.current_difficulty
+            self.sample_id_to_box[candidate] = 0
 
     def get_deck_size(self):
         deck_size = sum([len(box) for box in self.boxes])
@@ -156,3 +156,15 @@ class CurriculumIterator():
         n_samples_in_pool = sum([len(b) for b in self.boxes])
         if len(self.boxes[0]) < n_samples_in_pool*0.25 or self.steps_since_last_diff_update > n_samples_in_pool:
             self.update_difficulty()
+
+    def get_logging_info(self):
+        bos_distr = self.get_box_distribution()
+        bin_nr = [i for i in range(len(self.boxes) + 1)]
+        box_size = [len(box) for box in self.boxes]
+        return {
+            'current_difficulty': self.current_difficulty,
+            'current_db_pointer': self.current_db_pointer,
+            'box_distr':  wandb.Histogram(np_histogram=(bos_distr, bin_nr)),
+            'box_0': len(self.boxes[0]),
+            'box_size': box_size,
+        }

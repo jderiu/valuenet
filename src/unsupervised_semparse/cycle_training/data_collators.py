@@ -1,5 +1,6 @@
 import copy
 
+import torch
 from transformers import PreTrainedTokenizer
 from src.spider.example import Batch
 from src.spider.example_builder import build_example, build_sql2text_example
@@ -44,7 +45,7 @@ class DataCollatorSQL2Text:
         self.grammar = grammar
         self.device = device
 
-    def __call__(self, batch, return_tensors=None, is_eval=False):
+    def __call__(self, batch, return_question_mask=False, is_eval=False):
         examples, original_rows = [], []
         for data_row in batch:
             original_row = copy.deepcopy(data_row)
@@ -74,4 +75,10 @@ class DataCollatorSQL2Text:
             "labels": input_ids_tensor,
         }
 
+        if return_question_mask:
+            question_mask = torch.zeros_like(input_ids_tensor)
+            for i, length in enumerate(list(zip(*input_lengths))):
+                question_pos = sum([sum(x) for x in length[:-1]])
+                question_mask[i, question_pos:] = 1
+            return out_batch, original_rows, question_mask
         return out_batch, original_rows

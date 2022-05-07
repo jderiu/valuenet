@@ -59,9 +59,9 @@ class CycleTrainer:
                                                      growth_interval=2000, enabled=True)
         self.ir_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
                                                    growth_interval=2000, enabled=True)
-        self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
+        #self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
         db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
-        #self.train_loader, self.dev_loader = get_random_sampler(train_data, valid_data, args.batch_size, db_names_to_schema, 5)
+        self.train_loader, self.dev_loader = get_random_sampler(train_data, valid_data, args.batch_size, db_names_to_schema, 5)
         self.text2sql_collator = DataCollatorText2SQL(
             grammar=grammar,
             schema=schema,
@@ -74,40 +74,50 @@ class CycleTrainer:
             device=device
         )
 
-        self.sql_baseline = [-0.95]
-        self.bleu_baseline = [0.1]
+        self.sql_baseline = []
+        self.bleu_baseline = []
 
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs))
         for step in tqdm(range(num_train_steps), desc="Training", total=num_train_steps):
-            #sample_ids = self.train_loader.sample_batch(self.args.batch_size)
-            batch = next(iter(self.train_loader))
+            sample_ids = self.train_loader.sample_batch(self.args.batch_size)
+            batch = [self.train_loader.dataset[sample_id] for sample_id in sample_ids]
+            #batch = next(iter(self.train_loader))
             if step % 2 == 0:
                 fake_text_batch = self.sql2text(batch)
                 cycled_sql_batch = self.text2sql(fake_text_batch)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
+                self.sql_baseline.extend(sql_rewards)
                 sql_baseline = sum(self.sql_baseline) / len(self.sql_baseline)
                 gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
-                self.sql_baseline.extend(sql_rewards_torch)
                 logs = gpt_train_res
                 logs['sql_rewards_torch'] = float(sql_rewards_torch.mean())
                 logs['sql_baseline'] = float(sql_baseline)
+                for idx, sample_id in enumerate(sample_ids):
+                    self.train_loader.update_sample(sample_id, sql_rewards[idx] == 1)
+
             else:
                 fake_sql_batch = self.text2sql(batch)
-                cycled_text_batch = self.sql2text(fake_sql_batch)
-                text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
-                text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
+                cycled_loss = self.sql2text_loss(fake_sql_batch)
+                text_rewards_torch = 1 - cycled_loss
+                text_rewards = [float(x) for x in text_rewards_torch]
+                #cycled_text_batch = self.sql2text(fake_sql_batch)
+                #text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
+                #text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
+                self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 ir_res = self.train_text2sql(fake_sql_batch, text_rewards_torch, bleu_baseline)
-                self.bleu_baseline.extend(text_rewards)
                 logs = ir_res
                 logs['text_rewards_torch'] = float(text_rewards_torch.mean())
                 logs['bleu_baseline'] = float(bleu_baseline)
+                for idx, sample_id in enumerate(sample_ids):
+                    self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > 0.2)
 
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
-
+            data_loader_logs = self.train_loader.get_logging_info()
+            logs = {**logs, **data_loader_logs}
             wandb.log(logs)
 
     def train_sql2text(self, batch, rewards_batch, baseline):
@@ -142,6 +152,22 @@ class CycleTrainer:
             'gpt2_loss': float(loss.mean()),
             'gpt2_loss_adv': float(loss_adv.mean()),
         }
+
+    def sql2text_loss(self, batch):
+        examples, original_rows, question_mask = self.sql2text_collator(batch, return_question_mask=True, is_eval=False)
+        with torch.no_grad(), torch.cuda.amp.autocast():
+            outputs = self.gpt2_model(**examples)
+            logits = outputs.logits
+
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = examples['labels'][..., 1:].contiguous()
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss(reduction='none')
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            loss = loss.view(shift_logits.size(0), -1)
+            loss_masked = (loss * question_mask[..., 1:]).sum(dim=1)
+            mean_loss = loss_masked/(question_mask[..., 1:]).sum(dim=1)
+        return mean_loss
 
     def train_text2sql(self, batch, rewards_batch, baseline):
         examples, original_rows = self.text2sql_collator(batch)

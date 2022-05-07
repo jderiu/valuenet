@@ -122,7 +122,7 @@ def encode_input_sql2text(
     input_ids_tensor = torch.tensor(all_input_ids, dtype=torch.long).to(device)
     attention_mask_tensor = torch.tensor(all_attention_mask, dtype=torch.long).to(device)
 
-    return input_ids_tensor, attention_mask_tensor, (all_question_span_lengths, all_column_token_lengths, all_table_token_lengths, all_values_lengths)
+    return input_ids_tensor, attention_mask_tensor, (all_sql_span_lengths, all_column_token_lengths, all_table_token_lengths, all_values_lengths, all_question_span_lengths)
 
 
 def _tokenize_question(question, tokenizer, add_sep_token=True):
