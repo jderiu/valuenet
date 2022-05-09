@@ -365,7 +365,7 @@ class SoftUpdateTrainer:
         original_row['fail'] = True
 
     def evaluation(self):
-        sketch_acc, acc, _, predictions = evaluate(self.target_ir_model,
+        sketch_acc, acc, _, predictions = evaluate(self.ir_model,
                                                    self.dev_loader,
                                                    self.schema,
                                                    self.args.beam_size)
