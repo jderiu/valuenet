@@ -126,7 +126,8 @@ class SoftUpdateTrainer:
                     self.text_memory.push(fake_text_batch[idx])
                 if text_update % self.args.update_every == 0:
                     logs = self.update_sql2text()
-
+                if text_update % 10 == 0:
+                    print(fake_text_batch[0]['query'], fake_text_batch[0]['question'], cycled_sql_batch[0]['query'], sql_rewards[0])
                 #gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
             else:
                 sql_update += 1
@@ -148,7 +149,9 @@ class SoftUpdateTrainer:
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
-
+                if sql_update % 10 == 0:
+                    print(fake_sql_batch[0]['query'], fake_sql_batch[0]['question'], cycled_text_batch[0]['query'], text_rewards[0])
+                    
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
             data_loader_logs = self.train_loader.get_logging_info()
