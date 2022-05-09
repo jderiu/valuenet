@@ -1,4 +1,6 @@
 import torch, os
+from torch import parse_ir
+
 from src.data_loader import get_data_loader, get_random_sampler
 from src.manual_inference.helper import _semql_to_sql
 from src.unsupervised_semparse.cycle_training.data_collators import DataCollatorText2SQL, DataCollatorSQL2Text
@@ -85,11 +87,12 @@ class NaiveCycleTrainer:
 
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs))
+        train_data = self.train_loader.dataset
         for epoch in range(self.args.num_epochs):
             #generate fake data + filter using cycle
             fake_text_data, fake_sql_data = [], []
             filter_fake_text_data, filter_fake_sql_data = [], []
-            for step, batch in enumerate(tqdm(self.train_loader, desc="Generate Fake SQL")):
+            for step, batch in enumerate(tqdm(batch_list(train_data, self.args.batch_size), desc="Generate Fake SQL")):
                 fake_sql_batch = self.text2sql(batch)
                 fake_sql_data.extend(fake_sql_batch)
 
@@ -98,10 +101,10 @@ class NaiveCycleTrainer:
                 cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 for i in range(len(text_rewards)):
-                    if text_rewards[i] > 0.2:
+                    if text_rewards[i] > 0.1:
                         filter_fake_sql_data.append(fake_sql_batch[i])
 
-            for step, batch in enumerate(tqdm(self.train_loader, desc="Generate Fake Text")):
+            for step, batch in enumerate(tqdm(batch_list(train_data, self.args.batch_size), desc="Generate Fake Text")):
                 fake_text_batch = self.sql2text(batch, skip_vals=True)
                 fake_text_data.extend(fake_text_batch)
 
@@ -119,16 +122,21 @@ class NaiveCycleTrainer:
                 "Number of fake text": len(filter_fake_text_data),
                 "Number of fake sql": len(filter_fake_sql_data)
             })
+            filtered_data = filter_fake_text_data + filter_fake_sql_data
             #train on fake data
-            for batch in tqdm(batch_list(filter_fake_text_data, self.args.batch_size), desc="Training on fake text", total=len(filter_fake_text_data)//self.args.batch_size):
+            for batch in tqdm(batch_list(filtered_data, self.args.batch_size), desc="Training on fake text", total=len(filtered_data)//self.args.batch_size):
                 logs = self.train_sql2text(batch)
                 wandb.log(logs)
 
-            for batch in tqdm(batch_list(filter_fake_sql_data, self.args.batch_size), desc="Training on fake sql", total=len(filter_fake_sql_data)//self.args.batch_size):
+            for batch in tqdm(batch_list(filtered_data, self.args.batch_size), desc="Training on fake sql", total=len(filtered_data)//self.args.batch_size):
                 logs = self.train_text2sql(batch)
                 wandb.log(logs)
+
             eval_logs = self.evaluation()
             wandb.log(eval_logs)
+
+            #update trainset
+            train_data = self.update_train_set(self.train_loader.dataset, filtered_data)
 
     def train_sql2text(self, batch):
         examples, original_rows = self.sql2text_collator(batch, is_eval=False)
@@ -256,6 +264,27 @@ class NaiveCycleTrainer:
             rewards.append(result)
         return rewards
 
+    def update_train_set(self, train_set, filtered_train_set):
+        updated_train_set = []
+        for i, example in enumerate(filtered_train_set):
+            sql_out = example['query']
+            db_id = example['db_id']
+            db_train_set = [x for x in train_set if x['db_id'] == db_id]
+            for dp in db_train_set:
+                sql_in = dp['query']
+                eval_results = match_evaluation_single(
+                    sql_in,
+                    sql_out,
+                    db_id,
+                    self.db_names_to_schema[db_id],
+                    self.kmaps
+                )
+                partial_score = sum([v['acc'] for k, v in eval_results['partial'].items()]) / len(
+                    eval_results['partial'].items())
+                if partial_score >= 0.8:
+                    updated_train_set.append(dp)
+        return updated_train_set
+
     def reward_sql(self, fake_text_batch, cycled_sql_batch):
         rewards = []
         for fake_text_sample, cycled_sql_sample in zip(fake_text_batch, cycled_sql_batch):
@@ -269,7 +298,9 @@ class NaiveCycleTrainer:
                 self.db_names_to_schema[db_name],
                 self.kmaps
             )
-            reward = -1.0 if eval_results['exact'] == 0 else 1.0
+            partial_score = sum([v['acc'] for k, v in eval_results['partial'].items()])/len(eval_results['partial'].items())
+            reward = partial_score if partial_score == 1 else 0
+            #reward = -1.0 if eval_results['exact'] == 0 else 1.0
             rewards.append(reward)
         return rewards
 
