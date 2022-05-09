@@ -171,7 +171,7 @@ def read_arguments_cycletrain():
     parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--eval_batch_size', default=1, type=int)
     parser.add_argument('--gradient_accumulation_steps', default=1, type=int)
-    parser.add_argument('--num_epochs', default=5.0, type=float)
+    parser.add_argument('--num_epochs', default=5, type=int)
     parser.add_argument('--model_output_dir', default=Config.EXPERIMENT_PREFIX, type=str)
 
     parser.add_argument('--lr_base', default=1e-5, type=float)
