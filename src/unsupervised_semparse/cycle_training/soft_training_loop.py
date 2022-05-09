@@ -137,15 +137,20 @@ class SoftUpdateTrainer:
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
                 cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
+                #text rewards are not very reliable, thus do a super-cycle
+                super_cycled_sql_batch = self.text2sql(cycled_text_batch)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
+                sql_rewards = self.reward_sql(super_cycled_sql_batch, fake_sql_batch)
+                sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
+                text_rewards_torch = text_rewards_torch*sql_rewards_torch
                 self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > bleu_baseline)
                     fake_sql_batch[idx]['reward'] = text_rewards[idx]
-                    if fake_sql_batch[idx].get('fail', False) or cycled_text_batch[idx].get('fail', False):
+                    if fake_sql_batch[idx].get('fail', False) or cycled_text_batch[idx].get('fail', False) or super_cycled_sql_batch[idx].get('fail', False):
                         continue
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
@@ -359,7 +364,9 @@ class SoftUpdateTrainer:
                 self.db_names_to_schema[db_name],
                 self.kmaps
             )
-            reward = -1.0 if eval_results['exact'] == 0 else 1.0
+            partial_score = sum([v['acc'] for k, v in eval_results['partial'].items()]) / len(eval_results['partial'].items())
+            reward = partial_score if partial_score == 1 else 0
+            #reward = -1.0 if eval_results['exact'] == 0 else 1.0
             rewards.append(reward)
         return rewards
 
