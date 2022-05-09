@@ -143,7 +143,7 @@ class SoftUpdateTrainer:
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 sql_rewards = self.reward_sql(super_cycled_sql_batch, fake_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
-                text_rewards_torch = text_rewards_torch+sql_rewards_torch
+                text_rewards_torch = text_rewards_torch
                 self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
@@ -151,6 +151,9 @@ class SoftUpdateTrainer:
                     self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > bleu_baseline)
                     fake_sql_batch[idx]['reward'] = text_rewards[idx]
                     if fake_sql_batch[idx].get('fail', False) or cycled_text_batch[idx].get('fail', False) or super_cycled_sql_batch[idx].get('fail', False):
+                        continue
+                    #do not trust these rewards
+                    if sql_rewards[idx] == 0:
                         continue
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
