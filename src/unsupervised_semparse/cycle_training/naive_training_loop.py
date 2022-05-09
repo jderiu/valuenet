@@ -88,21 +88,30 @@ class NaiveCycleTrainer:
         for epoch in range(self.args.num_epochs):
             #generate fake data + filter using cycle
             fake_text_data, fake_sql_data = [], []
+            filter_fake_text_data, filter_fake_sql_data = [], []
             for step, batch in enumerate(tqdm(self.train_loader, desc="Generate Fake SQL")):
                 fake_sql_batch = self.text2sql(batch)
+                fake_sql_data.extend(fake_sql_batch)
+
+            #filter using cycle
+            for fake_sql_batch in tqdm(batch_list(fake_sql_data, 2*self.args.batch_size), desc="Filter Fake SQL", total=len(fake_sql_data)//self.args.batch_size):
                 cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 for i in range(len(text_rewards)):
                     if text_rewards[i] > 0.2:
-                        fake_sql_data.append(fake_sql_batch[i])
+                        filter_fake_sql_data.append(fake_sql_batch[i])
 
             for step, batch in enumerate(tqdm(self.train_loader, desc="Generate Fake Text")):
                 fake_text_batch = self.sql2text(batch, skip_vals=True)
+                fake_text_data.extend(fake_text_batch)
+
+            #filter using cycle
+            for fake_text_batch in tqdm(batch_list(fake_text_data, 2*self.args.batch_size), desc="Filter Fake Text", total=len(fake_text_data)//self.args.batch_size):
                 cycled_sql_batch = self.text2sql(fake_text_batch)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 for i in range(len(sql_rewards)):
                     if sql_rewards[i] == 1:
-                        fake_text_data.append(fake_text_batch[i])
+                        filter_fake_text_data.append(fake_text_batch[i])
 
             print("Number of fake text:", len(fake_text_data))
             print("Number of fake sql:", len(fake_sql_data))
