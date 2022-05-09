@@ -121,7 +121,7 @@ class SoftUpdateTrainer:
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, sql_rewards[idx] == 1)
                     fake_text_batch[idx]['reward'] = sql_rewards[idx]
-                    if fake_text_batch[idx]['faile']  or cycled_sql_batch[idx]['fail']:
+                    if fake_text_batch[idx].get('fail', False) or cycled_sql_batch[idx].get('fail', False):
                         continue
                     self.text_memory.push(fake_text_batch[idx])
                 if text_update % self.args.update_every == 0:
@@ -143,7 +143,7 @@ class SoftUpdateTrainer:
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > bleu_baseline)
                     fake_sql_batch[idx]['reward'] = text_rewards[idx]
-                    if fake_sql_batch[idx]['fail'] or cycled_text_batch[idx]['fail']:
+                    if fake_sql_batch[idx].get('fail', False) or cycled_text_batch[idx].get('fail', False):
                         continue
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
