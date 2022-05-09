@@ -1,17 +1,20 @@
 from itertools import chain
 
-from torch.optim import Adam
+from torch.optim import Adam, RMSprop
 from torch.optim.lr_scheduler import MultiStepLR
 
 
-def build_optimizer_base(model, num_train_steps,lr_base, scheduler_gamma):
+def build_optimizer_base(model, num_train_steps,lr_base, scheduler_gamma, use_rmsprop=False):
     print("Build optimizer and scheduler. Total training steps: {}".format(num_train_steps))
-    optimizer = Adam(model.parameters(), lr=lr_base)
+    if use_rmsprop:
+        optimizer = RMSprop(model.parameters(), lr=lr_base)
+    else:
+        optimizer = Adam(model.parameters(), lr=lr_base)
     scheduler = MultiStepLR(optimizer, milestones=[21, 41, 61, 81], gamma=scheduler_gamma)
 
     return optimizer, scheduler
 
-def build_optimizer_encoder(model, num_train_steps, lr_transformer, lr_connection, lr_base, scheduler_gamma):
+def build_optimizer_encoder(model, num_train_steps, lr_transformer, lr_connection, lr_base, scheduler_gamma, use_rmsprop=False):
     print("Build optimizer and scheduler. Total training steps: {}".format(num_train_steps))
 
     # we use different learning rates for three set of parameters:
@@ -36,8 +39,10 @@ def build_optimizer_encoder(model, num_train_steps, lr_transformer, lr_connectio
         {'params': connection_parameters, 'lr': lr_connection},
         {'params': remaining_parameters, 'lr': lr_base},
     ]
-
-    optimizer = Adam(parameter_groups)
+    if use_rmsprop:
+        optimizer = RMSprop(parameter_groups)
+    else:
+        optimizer = Adam(parameter_groups)
     scheduler = MultiStepLR(optimizer, milestones=[21, 41, 61, 81], gamma=scheduler_gamma)
 
     return optimizer, scheduler

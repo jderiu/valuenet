@@ -72,10 +72,11 @@ class SoftUpdateTrainer:
             ir_model,
             num_train_steps,
             args.lr_transformer, args.lr_connection, args.lr_base,
-            args.scheduler_gamma
+            args.scheduler_gamma,
+            use_rmsprop=True
         )
 
-        self.gpt2_optimizer, self.gpt2_scheduler = build_optimizer_base(gpt2_model, num_train_steps, args.lr_base, args.scheduler_gamma)
+        self.gpt2_optimizer, self.gpt2_scheduler = build_optimizer_base(gpt2_model, num_train_steps, args.lr_base, args.scheduler_gamma, use_rmsprop=True)
         self.gpt2_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
                                                      growth_interval=2000, enabled=True)
         self.ir_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
@@ -97,8 +98,8 @@ class SoftUpdateTrainer:
 
         self.sql_baseline = []
         self.bleu_baseline = []
-        self.text_memory = ReplayMemory(1000)
-        self.sql_memory = ReplayMemory(1000)
+        self.text_memory = ReplayMemory(5000)
+        self.sql_memory = ReplayMemory(5000)
         self.tau = 0.001
 
     def train(self):
@@ -263,7 +264,7 @@ class SoftUpdateTrainer:
             generated_out = self.target_gpt2_model.generate(
                 encoded_batch['input_ids'],
                 attention_mask=encoded_batch['attention_mask'],
-                max_length=encoded_batch['input_ids'].shape[1] + 16,
+                max_length=encoded_batch['input_ids'].shape[1] + 24,
                 num_beams=beam_size,
                 repetition_penalty=2.5,
                 no_repeat_ngram_size=3,
