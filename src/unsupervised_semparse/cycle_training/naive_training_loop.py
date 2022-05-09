@@ -113,18 +113,18 @@ class NaiveCycleTrainer:
                     if sql_rewards[i] == 1:
                         filter_fake_text_data.append(fake_text_batch[i])
 
-            print("Number of fake text:", len(fake_text_data))
-            print("Number of fake sql:", len(fake_sql_data))
+            print("Number of fake text:", len(filter_fake_text_data))
+            print("Number of fake sql:", len(filter_fake_sql_data))
             wandb.log({
-                "Number of fake text": len(fake_text_data),
-                "Number of fake sql": len(fake_sql_data)
+                "Number of fake text": len(filter_fake_text_data),
+                "Number of fake sql": len(filter_fake_sql_data)
             })
             #train on fake data
-            for batch in tqdm(batch_list(fake_text_data, self.args.batch_size), desc="Training on fake text", total=len(fake_text_data)//self.args.batch_size):
+            for batch in tqdm(batch_list(filter_fake_text_data, self.args.batch_size), desc="Training on fake text", total=len(filter_fake_text_data)//self.args.batch_size):
                 logs = self.train_sql2text(batch)
                 wandb.log(logs)
 
-            for batch in tqdm(batch_list(fake_sql_data, self.args.batch_size), desc="Training on fake sql", total=len(fake_sql_data)//self.args.batch_size):
+            for batch in tqdm(batch_list(filter_fake_sql_data, self.args.batch_size), desc="Training on fake sql", total=len(filter_fake_sql_data)//self.args.batch_size):
                 logs = self.train_text2sql(batch)
                 wandb.log(logs)
             eval_logs = self.evaluation()
