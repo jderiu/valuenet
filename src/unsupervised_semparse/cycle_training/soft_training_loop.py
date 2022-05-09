@@ -354,7 +354,7 @@ class SoftUpdateTrainer:
         original_row['query_toks'] = self.dummy_queries[db_id]['query_toks']
 
     def evaluation(self):
-        sketch_acc, acc, _, predictions = evaluate(self.ir_model,
+        sketch_acc, acc, _, predictions = evaluate(self.target_ir_model,
                                                    self.dev_loader,
                                                    self.schema,
                                                    self.args.beam_size)
