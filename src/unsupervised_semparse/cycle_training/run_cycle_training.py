@@ -70,7 +70,7 @@ if __name__ == '__main__':
     gpt2_model.to(device)
     print("Loaded pre-trained GPT2 model from '{}'".format(args.gpt2_model_to_load))
 
-    trainer = SoftUpdateTrainer(
+    trainer = NaiveCycleTrainer(
         ir_model,
         gpt2_model,
         decoder_tokenizer,
