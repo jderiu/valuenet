@@ -150,8 +150,8 @@ class SoftUpdateTrainer:
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
                 if sql_update % 10 == 0:
-                    print(fake_sql_batch[0]['query'], fake_sql_batch[0]['question'], cycled_text_batch[0]['query'], text_rewards[0])
-                    
+                    print(fake_sql_batch[0]['question'], fake_sql_batch[0]['query'], cycled_text_batch[0]['question'], text_rewards[0])
+
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
             data_loader_logs = self.train_loader.get_logging_info()
