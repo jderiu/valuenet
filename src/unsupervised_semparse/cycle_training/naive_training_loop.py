@@ -65,7 +65,7 @@ class NaiveCycleTrainer:
                                                      growth_interval=2000, enabled=True)
         self.ir_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
                                                    growth_interval=2000, enabled=True)
-        self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
+        self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, 2*args.batch_size, True, False)
         db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
         #self.train_loader, self.dev_loader = get_random_sampler(train_data, valid_data, args.batch_size, db_names_to_schema, 5)
         self.text2sql_collator = DataCollatorText2SQL(
@@ -88,20 +88,21 @@ class NaiveCycleTrainer:
         for epoch in range(self.args.num_epochs):
             #generate fake data + filter using cycle
             fake_text_data, fake_sql_data = [], []
-            for step, batch in enumerate(tqdm(self.train_loader, desc="Training")):
-                fake_text_batch = self.sql2text(batch, skip_vals=True)
-                cycled_sql_batch = self.text2sql(fake_text_batch)
-                sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
-                for i in range(len(sql_rewards)):
-                    if sql_rewards[i] == 1:
-                        fake_text_data.append(fake_text_batch[i])
-
+            for step, batch in enumerate(tqdm(self.train_loader, desc="Generate Fake SQL")):
                 fake_sql_batch = self.text2sql(batch)
                 cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 for i in range(len(text_rewards)):
                     if text_rewards[i] > 0.2:
                         fake_sql_data.append(fake_sql_batch[i])
+
+            for step, batch in enumerate(tqdm(self.train_loader, desc="Generate Fake Text")):
+                fake_text_batch = self.sql2text(batch, skip_vals=True)
+                cycled_sql_batch = self.text2sql(fake_text_batch)
+                sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
+                for i in range(len(sql_rewards)):
+                    if sql_rewards[i] == 1:
+                        fake_text_data.append(fake_text_batch[i])
 
             print("Number of fake text:", len(fake_text_data))
             print("Number of fake sql:", len(fake_sql_data))
