@@ -100,7 +100,8 @@ class SoftUpdateTrainer:
         self.bleu_baseline = [0.3]
         self.text_memory = ReplayMemory(5000)
         self.sql_memory = ReplayMemory(5000)
-        self.tau = 0.001
+        self.ir_tau = 0.001
+        self.gpt2_tau = 0.01
 
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs))
@@ -172,7 +173,7 @@ class SoftUpdateTrainer:
         sql_baseline = sum(self.sql_baseline) / len(self.sql_baseline)
         logs = self.train_sql2text(batch, rewards_batch_torch, sql_baseline)
         logs['train/sql_baseline'] = float(sql_baseline)
-        self.soft_update(self.gpt2_model, self.target_gpt2_model, self.tau)
+        self.soft_update(self.gpt2_model, self.target_gpt2_model, self.gpt2_tau)
         return logs
 
     def train_sql2text(self, batch, rewards_batch, baseline):
@@ -235,7 +236,7 @@ class SoftUpdateTrainer:
         bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
         logs = self.train_text2sql(batch, rewards_batch_torch, bleu_baseline)
         logs['train/bleu_baseline'] = float(bleu_baseline)
-        self.soft_update(self.ir_model, self.target_ir_model, self.tau)
+        self.soft_update(self.ir_model, self.target_ir_model, self.ir_tau)
         return logs
 
     def train_text2sql(self, batch, rewards_batch, baseline):
