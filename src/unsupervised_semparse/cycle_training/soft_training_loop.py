@@ -144,7 +144,7 @@ class SoftUpdateTrainer:
                     self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > bleu_baseline)
                     fake_sql_batch[idx]['reward'] = text_rewards[idx]
                     if fake_sql_batch[idx]['fail'] or cycled_text_batch[idx]['fail']:
-                        continue  
+                        continue
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
