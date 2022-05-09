@@ -92,24 +92,25 @@ class NaiveCycleTrainer:
             #generate fake data + filter using cycle
             fake_text_data, fake_sql_data = [], []
             filter_fake_text_data, filter_fake_sql_data = [], []
-            for step, batch in enumerate(tqdm(batch_list(train_data, 2*self.args.batch_size), desc="Generate Fake SQL", total=len(train_data)//self.args.batch_size)):
+            gen_batch_size = 2*self.args.batch_size
+            for step, batch in enumerate(tqdm(batch_list(train_data, gen_batch_size), desc="Generate Fake SQL", total=len(train_data)//gen_batch_size)):
                 fake_sql_batch = self.text2sql(batch)
                 fake_sql_data.extend(fake_sql_batch)
 
             #filter using cycle
-            for fake_sql_batch in tqdm(batch_list(fake_sql_data, 2*self.args.batch_size), desc="Filter Fake SQL", total=len(fake_sql_data)//self.args.batch_size):
+            for fake_sql_batch in tqdm(batch_list(fake_sql_data, gen_batch_size), desc="Filter Fake SQL", total=len(fake_sql_data)//gen_batch_size):
                 cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 for i in range(len(text_rewards)):
                     if text_rewards[i] > 0.1:
                         filter_fake_sql_data.append(fake_sql_batch[i])
 
-            for step, batch in enumerate(tqdm(batch_list(train_data, 2*self.args.batch_size), desc="Generate Fake Text", total=len(train_data)//self.args.batch_size)):
+            for step, batch in enumerate(tqdm(batch_list(train_data, gen_batch_size), desc="Generate Fake Text", total=len(train_data)//gen_batch_size)):
                 fake_text_batch = self.sql2text(batch, skip_vals=True)
                 fake_text_data.extend(fake_text_batch)
 
             #filter using cycle
-            for fake_text_batch in tqdm(batch_list(fake_text_data, 2*self.args.batch_size), desc="Filter Fake Text", total=len(fake_text_data)//self.args.batch_size):
+            for fake_text_batch in tqdm(batch_list(fake_text_data, gen_batch_size), desc="Filter Fake Text", total=len(fake_text_data)//gen_batch_size):
                 cycled_sql_batch = self.text2sql(fake_text_batch)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 for i in range(len(sql_rewards)):
