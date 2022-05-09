@@ -183,6 +183,7 @@ def read_arguments_cycletrain():
     parser.add_argument('--clip_grad', default=5., type=float)
     parser.add_argument('--loss_epoch_threshold', default=50, type=int)
     parser.add_argument('--sketch_loss_weight', default=1.0, type=float)
+    parser.add_argument('--update_every', default=4, type=int)
 
     # prediction configuration (run after each epoch)
     parser.add_argument('--beam_size', default=5, type=int, help='beam size for beam search')

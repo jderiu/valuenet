@@ -12,6 +12,7 @@ from src.spider import spider_utils
 from src.utils import setup_device, set_seed_everywhere, create_experiment_folder
 from src.unsupervised_semparse.cycle_training.training_loop import CycleTrainer
 from src.unsupervised_semparse.cycle_training.naive_training_loop import NaiveCycleTrainer
+from src.unsupervised_semparse.cycle_training.soft_training_loop import SoftUpdateTrainer
 from src.named_entity_recognition.database_value_finder.database_value_finder_sqlite import DatabaseValueFinderSQLite
 from src.manual_inference.helper import get_schemas_spider
 
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     gpt2_model.to(device)
     print("Loaded pre-trained GPT2 model from '{}'".format(args.gpt2_model_to_load))
 
-    trainer = NaiveCycleTrainer(
+    trainer = SoftUpdateTrainer(
         ir_model,
         gpt2_model,
         decoder_tokenizer,
