@@ -89,7 +89,7 @@ class NaiveCycleTrainer:
             #generate fake data + filter using cycle
             fake_text_data, fake_sql_data = [], []
             for step, batch in enumerate(tqdm(self.train_loader, desc="Training")):
-                fake_text_batch = self.sql2text(batch)
+                fake_text_batch = self.sql2text(batch, skip_vals=True)
                 cycled_sql_batch = self.text2sql(fake_text_batch)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 for i in range(len(sql_rewards)):
@@ -192,9 +192,7 @@ class NaiveCycleTrainer:
                 pred_out = 'What is this?'
             original_rows[i]['question'] = pred_out
             original_rows[i]['question_toks'] = tokenize_question(self.nlp_tokenizer, pred_out)
-            if skip_vals:
-                original_rows[i]['values'] = []
-            else:
+            if not skip_vals:
                 original_rows[i]['values'] = get_values(
                     pred_out,
                     original_rows[i]['question_toks'],
