@@ -143,7 +143,7 @@ class SoftUpdateTrainer:
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 sql_rewards = self.reward_sql(super_cycled_sql_batch, fake_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
-                text_rewards_torch = text_rewards_torch*sql_rewards_torch
+                text_rewards_torch = text_rewards_torch+sql_rewards_torch
                 self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
