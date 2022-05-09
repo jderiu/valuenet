@@ -121,6 +121,8 @@ class SoftUpdateTrainer:
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, sql_rewards[idx] == 1)
                     fake_text_batch[idx]['reward'] = sql_rewards[idx]
+                    if fake_text_batch[idx]['faile']  or cycled_sql_batch[idx]['fail']:
+                        continue
                     self.text_memory.push(fake_text_batch[idx])
                 if text_update % self.args.update_every == 0:
                     logs = self.update_sql2text()
@@ -141,6 +143,8 @@ class SoftUpdateTrainer:
                 for idx, sample_id in enumerate(sample_ids):
                     self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > bleu_baseline)
                     fake_sql_batch[idx]['reward'] = text_rewards[idx]
+                    if fake_sql_batch[idx]['fail'] or cycled_text_batch[idx]['fail']:
+                        continue  
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
@@ -157,6 +161,8 @@ class SoftUpdateTrainer:
             wandb.log(logs)
 
     def update_sql2text(self):
+        if len(self.text_memory) < self.args.batch_size:
+            return {}
         batch = self.text_memory.sample(self.args.batch_size)
         rewards_batch = [x['reward'] for x in batch]
         rewards_batch_torch = torch.tensor(rewards_batch, dtype=torch.float, device=self.device)
@@ -218,6 +224,8 @@ class SoftUpdateTrainer:
         return mean_loss
 
     def update_text2sql(self):
+        if len(self.sql_memory) < self.args.batch_size:
+            return {}
         batch = self.sql_memory.sample(self.args.batch_size)
         rewards_batch = [x['reward'] for x in batch]
         rewards_batch_torch = torch.tensor(rewards_batch, dtype=torch.float, device=self.device)
@@ -275,6 +283,7 @@ class SoftUpdateTrainer:
         for i, pred_out in enumerate(pred_batch_out):
             if len(pred_out) < 2:
                 pred_out = 'What is this?'
+                original_rows[i]['fail'] = True
             original_rows[i]['question'] = pred_out
             original_rows[i]['question_toks'] = tokenize_question(self.nlp_tokenizer, pred_out)
             if not skip_vals:
@@ -353,6 +362,7 @@ class SoftUpdateTrainer:
         original_row['rule_label'] = self.dummy_queries[db_id]['rule_label']
         original_row['query'] = self.dummy_queries[db_id]['query']
         original_row['query_toks'] = self.dummy_queries[db_id]['query_toks']
+        original_row['fail'] = True
 
     def evaluation(self):
         sketch_acc, acc, _, predictions = evaluate(self.target_ir_model,
