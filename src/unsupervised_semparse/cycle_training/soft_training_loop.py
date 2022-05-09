@@ -97,7 +97,7 @@ class SoftUpdateTrainer:
         )
 
         self.sql_baseline = []
-        self.bleu_baseline = []
+        self.bleu_baseline = [0.3]
         self.text_memory = ReplayMemory(5000)
         self.sql_memory = ReplayMemory(5000)
         self.tau = 0.001
@@ -337,6 +337,8 @@ class SoftUpdateTrainer:
 
             decoded_preds, decoded_labels = postprocess_text([text_out], [text_in])
             result = self.bleu_metric.compute(predictions=decoded_preds, references=decoded_labels)['score'] / 100
+            if result < 0.2:
+                result = 0.0
             rewards.append(result)
         return rewards
 
