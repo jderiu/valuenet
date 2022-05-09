@@ -111,7 +111,7 @@ class SoftUpdateTrainer:
             logs = {}
             if step % 2 == 0:
                 text_update += 1
-                fake_text_batch = self.sql2text(batch, skip_vals=False)
+                fake_text_batch = self.sql2text(batch, skip_vals=True)
                 cycled_sql_batch = self.text2sql(fake_text_batch)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
@@ -131,7 +131,7 @@ class SoftUpdateTrainer:
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
-                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=False)
+                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 self.bleu_baseline.extend(text_rewards)
