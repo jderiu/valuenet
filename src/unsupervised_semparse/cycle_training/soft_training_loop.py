@@ -111,7 +111,7 @@ class SoftUpdateTrainer:
             logs = {}
             if step % 2 == 0:
                 text_update += 1
-                fake_text_batch = self.sql2text(batch)
+                fake_text_batch = self.sql2text(batch, skip_vals=False)
                 cycled_sql_batch = self.text2sql(fake_text_batch)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
@@ -131,7 +131,7 @@ class SoftUpdateTrainer:
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
-                cycled_text_batch = self.sql2text(fake_sql_batch)
+                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=False)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 self.bleu_baseline.extend(text_rewards)
@@ -256,7 +256,7 @@ class SoftUpdateTrainer:
             'ir/loss_lf': mean_lf_loss
         }
 
-    def sql2text(self, batch):
+    def sql2text(self, batch, skip_vals=False):
         beam_size = self.args.beam_size
         encoded_batch, original_rows = self.sql2text_collator(batch, is_eval=True)
         with torch.no_grad(), torch.cuda.amp.autocast():
@@ -276,13 +276,14 @@ class SoftUpdateTrainer:
                 pred_out = 'What is this?'
             original_rows[i]['question'] = pred_out
             original_rows[i]['question_toks'] = tokenize_question(self.nlp_tokenizer, pred_out)
-            original_rows[i]['values'] = get_values(
-                pred_out,
-                original_rows[i]['question_toks'],
-                original_rows[i]['table_names'],
-                original_rows[i]['col_set'],
-                self.db_value_finders[original_rows[i]['db_id']]
-            )
+            if not skip_vals:
+                original_rows[i]['values'] = get_values(
+                    pred_out,
+                    original_rows[i]['question_toks'],
+                    original_rows[i]['table_names'],
+                    original_rows[i]['col_set'],
+                    self.db_value_finders[original_rows[i]['db_id']]
+                )
         return original_rows
 
     def text2sql(self, batch):
