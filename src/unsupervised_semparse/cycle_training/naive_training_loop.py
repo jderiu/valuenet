@@ -92,7 +92,7 @@ class NaiveCycleTrainer:
             #generate fake data + filter using cycle
             fake_text_data, fake_sql_data = [], []
             filter_fake_text_data, filter_fake_sql_data = [], []
-            for step, batch in enumerate(tqdm(batch_list(train_data, self.args.batch_size), desc="Generate Fake SQL")):
+            for step, batch in enumerate(tqdm(batch_list(train_data, 2*self.args.batch_size), desc="Generate Fake SQL", total=len(train_data)//self.args.batch_size)):
                 fake_sql_batch = self.text2sql(batch)
                 fake_sql_data.extend(fake_sql_batch)
 
@@ -104,7 +104,7 @@ class NaiveCycleTrainer:
                     if text_rewards[i] > 0.1:
                         filter_fake_sql_data.append(fake_sql_batch[i])
 
-            for step, batch in enumerate(tqdm(batch_list(train_data, self.args.batch_size), desc="Generate Fake Text")):
+            for step, batch in enumerate(tqdm(batch_list(train_data, 2*self.args.batch_size), desc="Generate Fake Text", total=len(train_data)//self.args.batch_size)):
                 fake_text_batch = self.sql2text(batch, skip_vals=True)
                 fake_text_data.extend(fake_text_batch)
 
