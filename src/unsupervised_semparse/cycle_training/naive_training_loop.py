@@ -59,10 +59,11 @@ class NaiveCycleTrainer:
             ir_model,
             num_train_steps,
             args.lr_transformer, args.lr_connection, args.lr_base,
-            args.scheduler_gamma
+            args.scheduler_gamma,
+            use_rmsprop=True
         )
 
-        self.gpt2_optimizer, self.gpt2_scheduler = build_optimizer_base(gpt2_model, num_train_steps, args.lr_base, args.scheduler_gamma)
+        self.gpt2_optimizer, self.gpt2_scheduler = build_optimizer_base(gpt2_model, num_train_steps, args.lr_base, args.scheduler_gamma, use_rmsprop=True)
         self.gpt2_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
                                                      growth_interval=2000, enabled=True)
         self.ir_scaler = torch.cuda.amp.GradScaler(init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5,
