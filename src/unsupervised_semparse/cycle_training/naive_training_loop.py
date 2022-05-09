@@ -97,7 +97,7 @@ class NaiveCycleTrainer:
                         fake_text_data.append(fake_text_batch[i])
 
                 fake_sql_batch = self.text2sql(batch)
-                cycled_text_batch = self.sql2text(fake_sql_batch)
+                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 for i in range(len(text_rewards)):
                     if text_rewards[i] > 0.2:
@@ -172,7 +172,7 @@ class NaiveCycleTrainer:
             'ir/loss_lf': mean_lf_loss
         }
 
-    def sql2text(self, batch):
+    def sql2text(self, batch, skip_vals=False):
         beam_size = self.args.beam_size
         encoded_batch, original_rows = self.sql2text_collator(batch, is_eval=True)
         with torch.no_grad(), torch.cuda.amp.autocast():
@@ -192,13 +192,16 @@ class NaiveCycleTrainer:
                 pred_out = 'What is this?'
             original_rows[i]['question'] = pred_out
             original_rows[i]['question_toks'] = tokenize_question(self.nlp_tokenizer, pred_out)
-            original_rows[i]['values'] = get_values(
-                pred_out,
-                original_rows[i]['question_toks'],
-                original_rows[i]['table_names'],
-                original_rows[i]['col_set'],
-                self.db_value_finders[original_rows[i]['db_id']]
-            )
+            if skip_vals:
+                original_rows[i]['values'] = []
+            else:
+                original_rows[i]['values'] = get_values(
+                    pred_out,
+                    original_rows[i]['question_toks'],
+                    original_rows[i]['table_names'],
+                    original_rows[i]['col_set'],
+                    self.db_value_finders[original_rows[i]['db_id']]
+                )
         return original_rows
 
     def text2sql(self, batch):
