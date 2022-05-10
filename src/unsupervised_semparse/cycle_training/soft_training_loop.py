@@ -171,7 +171,7 @@ class SoftUpdateTrainer:
                     sql_rewards_sub_batch = sql_rewards[sample_id: sample_id + self.args.beam_size]
                     for fake_item, cycled_item, super_cycled_item, text_reward, sql_reward in zip(fake_sql_sub_batch, cycled_text_sub_batch, super_cycled_sql_sub_batch, text_rewards_sub_batch, sql_rewards_sub_batch):
                         fake_item['reward'] = text_reward
-                        baseline = sum(text_reward)/len(text_reward)
+                        baseline = sum(text_rewards_sub_batch)/len(text_rewards_sub_batch)
                         fake_item['baseline'] = baseline
                         if fake_item.get('fail', False) or cycled_item.get('fail', False) or super_cycled_item.get('fail', False):
                             continue
