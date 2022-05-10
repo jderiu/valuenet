@@ -109,6 +109,7 @@ class SoftUpdateTrainer:
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs))
         text_update, sql_update = 0, 0
+        return_beams = True
         for step in tqdm(range(num_train_steps), desc="Training", total=num_train_steps):
             sample_ids = self.train_loader.sample_batch(self.args.batch_size)
             batch = [self.train_loader.dataset[sample_id] for sample_id in sample_ids]
@@ -116,18 +117,20 @@ class SoftUpdateTrainer:
             logs = {}
             if step % 2 == 0:
                 text_update += 1
-                fake_text_batch = self.sql2text(batch, skip_vals=True, return_beams=False)
+                fake_text_batch = self.sql2text(batch, skip_vals=True, return_beams=return_beams)
                 cycled_sql_batch = self.text2sql(fake_text_batch, return_beams=False)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
                 self.sql_baseline.extend(sql_rewards)
                 logs['train/sql_rewards_torch'] = float(sql_rewards_torch.mean())
-                for idx, sample_id in enumerate(sample_ids):
-                    self.train_loader.update_sample(sample_id, sql_rewards[idx] == 1)
-                    fake_text_batch[idx]['reward'] = sql_rewards[idx]
-                    if fake_text_batch[idx].get('fail', False) or cycled_sql_batch[idx].get('fail', False):
+                for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
+                    self.train_loader.update_sample(sample_ids[idx], 1 in sql_rewards[sample_id: sample_id+self.args.beam_size])
+
+                for fake_item, cycled_item, reward in zip(fake_text_batch, cycled_sql_batch, sql_rewards):
+                    fake_item['reward'] = reward
+                    if fake_item.get('fail', False) or cycled_item.get('fail', False):
                         continue
-                    self.text_memory.push(fake_text_batch[idx])
+                    self.text_memory.push(fake_item)
                 if text_update % self.args.update_every == 0:
                     logs = self.update_sql2text()
                 for fake_item, cycled_item, reward in zip(fake_text_batch, cycled_sql_batch, sql_rewards):
@@ -136,7 +139,7 @@ class SoftUpdateTrainer:
                 #gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
             else:
                 sql_update += 1
-                fake_sql_batch = self.text2sql(batch, return_beams=False)
+                fake_sql_batch = self.text2sql(batch, return_beams=return_beams)
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
@@ -151,15 +154,18 @@ class SoftUpdateTrainer:
                 self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
-                for idx, sample_id in enumerate(sample_ids):
-                    self.train_loader.update_sample(sample_id, float(text_rewards[idx]) > bleu_baseline)
-                    fake_sql_batch[idx]['reward'] = text_rewards[idx]
-                    if fake_sql_batch[idx].get('fail', False) or cycled_text_batch[idx].get('fail', False) or super_cycled_sql_batch[idx].get('fail', False):
+                for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
+                    update = True in [x for x in text_rewards[sample_id: sample_id + self.args.beam_size] if x > bleu_baseline]
+                    self.train_loader.update_sample(sample_ids[idx], update)
+
+                for fake_item, cycled_item, super_cycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
+                    fake_item['reward'] = t_reward
+                    if fake_item.get('fail', False) or cycled_item.get('fail', False) or super_cycled_item.get('fail', False):
                         continue
                     #do not trust these rewards
-                    if not sql_rewards[idx] == 1:
+                    if not s_reward == 1:
                         continue
-                    self.sql_memory.push(fake_sql_batch[idx])
+                    self.sql_memory.push(fake_item)
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
                 for fake_item, cycled_item, supercycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
@@ -286,9 +292,10 @@ class SoftUpdateTrainer:
 
     def sql2text(self, batch, skip_vals=False, return_beams=False):
         beam_size = self.args.beam_size
+        num_return_sequences = 1 if not return_beams else beam_size
         encoded_batch, original_rows = self.sql2text_collator(batch, is_eval=True)
         with torch.no_grad(), torch.cuda.amp.autocast():
-            num_return_sequences = 1 if not return_beams else beam_size
+
             generated_out = self.target_gpt2_model.generate(
                 encoded_batch['input_ids'],
                 attention_mask=encoded_batch['attention_mask'],
@@ -301,21 +308,28 @@ class SoftUpdateTrainer:
             )
         decoded_out = self.gpt2_tokenizer.batch_decode(generated_out, skip_special_tokens=True)
         pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
+        row_counter = 0
+        out_original_rows = []
         for i, pred_out in enumerate(pred_batch_out):
+            if i % num_return_sequences == 0 and i > 0:
+                row_counter += 1
+            copy_orig_row = copy.deepcopy(original_rows[row_counter])
             if len(pred_out) < 2:
                 pred_out = 'What is this?'
-                original_rows[i]['fail'] = True
-            original_rows[i]['question'] = pred_out
-            original_rows[i]['question_toks'] = tokenize_question(self.nlp_tokenizer, pred_out)
+                copy_orig_row['fail'] = True
+            copy_orig_row['question'] = pred_out
+            copy_orig_row['question_toks'] = tokenize_question(self.nlp_tokenizer, pred_out)
             if not skip_vals:
-                original_rows[i]['values'] = get_values(
+                copy_orig_row = get_values(
                     pred_out,
-                    original_rows[i]['question_toks'],
-                    original_rows[i]['table_names'],
-                    original_rows[i]['col_set'],
-                    self.db_value_finders[original_rows[i]['db_id']]
+                    copy_orig_row['question_toks'],
+                    copy_orig_row['table_names'],
+                    copy_orig_row['col_set'],
+                    self.db_value_finders[copy_orig_row['db_id']]
                 )
-        return original_rows
+            out_original_rows.append(copy_orig_row)
+
+        return out_original_rows
 
     def text2sql(self, batch, return_beams=False):
         beam_size = self.args.beam_size
