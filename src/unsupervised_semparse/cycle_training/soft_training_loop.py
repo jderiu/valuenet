@@ -17,6 +17,11 @@ from collections import deque
 from tqdm import tqdm
 
 
+def batch_list(iterable, n=1):
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield iterable[ndx:min(ndx + n, l)]
+
 class ReplayMemory(object):
 
     def __init__(self, capacity):
@@ -292,22 +297,26 @@ class SoftUpdateTrainer:
 
     def sql2text(self, batch, skip_vals=False, return_beams=False):
         beam_size = self.args.beam_size
+        pred_batch_out, original_rows = [], []
         num_return_sequences = 1 if not return_beams else beam_size
-        encoded_batch, original_rows = self.sql2text_collator(batch, is_eval=True)
-        with torch.no_grad(), torch.cuda.amp.autocast():
+        for batchy_batch in batch_list(batch, self.args.batch_size):
+            encoded_batch, original_rows_batch = self.sql2text_collator(batchy_batch, is_eval=True)
+            with torch.no_grad(), torch.cuda.amp.autocast():
 
-            generated_out = self.target_gpt2_model.generate(
-                encoded_batch['input_ids'],
-                attention_mask=encoded_batch['attention_mask'],
-                max_length=encoded_batch['input_ids'].shape[1] + 24,
-                num_beams=beam_size,
-                repetition_penalty=2.5,
-                no_repeat_ngram_size=3,
-                pad_token_id=self.gpt2_tokenizer.pad_token_id,
-                num_return_sequences=num_return_sequences,
-            )
-        decoded_out = self.gpt2_tokenizer.batch_decode(generated_out, skip_special_tokens=True)
-        pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
+                generated_out = self.target_gpt2_model.generate(
+                    encoded_batch['input_ids'],
+                    attention_mask=encoded_batch['attention_mask'],
+                    max_length=encoded_batch['input_ids'].shape[1] + 24,
+                    num_beams=beam_size,
+                    repetition_penalty=2.5,
+                    no_repeat_ngram_size=3,
+                    pad_token_id=self.gpt2_tokenizer.pad_token_id,
+                    num_return_sequences=num_return_sequences,
+                )
+            decoded_out = self.gpt2_tokenizer.batch_decode(generated_out, skip_special_tokens=True)
+            pred_batch_out_batch = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
+            pred_batch_out.extend(pred_batch_out_batch)
+            original_rows.extend(original_rows_batch)
         row_counter = 0
         out_original_rows = []
         for i, pred_out in enumerate(pred_batch_out):
