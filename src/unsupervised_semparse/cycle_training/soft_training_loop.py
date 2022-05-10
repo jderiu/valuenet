@@ -133,7 +133,7 @@ class SoftUpdateTrainer:
                 for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
                     self.train_loader.update_sample(sample_ids[idx], 1 in sql_rewards[sample_id: sample_id+self.args.beam_size])
 
-                for fake_item, cycled_item, reward in zip(fake_text_batch, cycled_sql_batch, sql_rewards):
+                for idx, (fake_item, cycled_item, reward) in enumerate(zip(fake_text_batch, cycled_sql_batch, sql_rewards)):
                     fake_item['reward'] = reward
                     if fake_item.get('fail', False) or cycled_item.get('fail', False):
                         continue
@@ -146,7 +146,7 @@ class SoftUpdateTrainer:
                 #gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
             else:
                 sql_update += 1
-                fake_sql_batch = self.text2sql(batch, return_beams=return_beams)
+                fake_sql_batch = self.text2sql(batch, return_beams=True)
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
@@ -164,15 +164,21 @@ class SoftUpdateTrainer:
                 for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
                     update = True in [x for x in text_rewards[sample_id: sample_id + self.args.beam_size] if x > 0.25]
                     self.train_loader.update_sample(sample_ids[idx], update)
-
-                for fake_item, cycled_item, super_cycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
-                    fake_item['reward'] = t_reward
-                    if fake_item.get('fail', False) or cycled_item.get('fail', False) or super_cycled_item.get('fail', False):
-                        continue
-                    #do not trust these rewards
-                    #if not s_reward == 1:
-                    #    continue
-                    self.sql_memory.push(fake_item)
+                    fake_sql_sub_batch = fake_sql_batch[sample_id: sample_id + self.args.beam_size]
+                    cycled_text_sub_batch = cycled_text_batch[sample_id: sample_id + self.args.beam_size]
+                    super_cycled_sql_sub_batch = super_cycled_sql_batch[sample_id: sample_id + self.args.beam_size]
+                    text_rewards_sub_batch = text_rewards[sample_id: sample_id + self.args.beam_size]
+                    sql_rewards_sub_batch = sql_rewards[sample_id: sample_id + self.args.beam_size]
+                    for fake_item, cycled_item, super_cycled_item, text_reward, sql_reward in zip(fake_sql_sub_batch, cycled_text_sub_batch, super_cycled_sql_sub_batch, text_rewards_sub_batch, sql_rewards_sub_batch):
+                        fake_item['reward'] = text_reward
+                        baseline = sum(text_reward)/len(text_reward)
+                        fake_item['baseline'] = baseline
+                        if fake_item.get('fail', False) or cycled_item.get('fail', False) or super_cycled_item.get('fail', False):
+                            continue
+                        #do not trust these rewards
+                        #if not s_reward == 1:
+                        #    continue
+                        self.sql_memory.push(fake_item)
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
                 for fake_item, cycled_item, supercycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
@@ -261,8 +267,10 @@ class SoftUpdateTrainer:
         batch = self.sql_memory.sample(self.args.batch_size)
         rewards_batch = [x['reward'] for x in batch]
         rewards_batch_torch = torch.tensor(rewards_batch, dtype=torch.float, device=self.device)
+        baseline_batch = [x['baseline'] for x in batch]
+        baseline_batch_torch = torch.tensor(baseline_batch, dtype=torch.float, device=self.device)
+        logs = self.train_text2sql(batch, rewards_batch_torch, baseline_batch_torch)
         bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
-        logs = self.train_text2sql(batch, rewards_batch_torch, bleu_baseline)
         logs['train/bleu_baseline'] = float(bleu_baseline)
         self.soft_update(self.ir_model, self.target_ir_model, self.ir_tau)
         return logs
