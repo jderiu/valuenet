@@ -12,6 +12,7 @@ from datasets import load_metric
 from src.optimizer import build_optimizer_encoder, build_optimizer_base
 from torch.nn import CrossEntropyLoss
 from spacy.lang.en import English
+from sentence_transformers import SentenceTransformer, util
 import wandb
 from collections import deque
 from tqdm import tqdm
@@ -72,6 +73,7 @@ class SoftUpdateTrainer:
         self.kmaps = build_foreign_key_map_from_json(os.path.join(args.data_dir, "original", 'tables.json'))
         self.db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
         self.bleu_metric = load_metric("sacrebleu")
+        self.similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
 
         num_train_steps = len(train_data) * args.num_epochs
         self.ir_optimizer, self.ir_scheduler = build_optimizer_encoder(
@@ -151,7 +153,7 @@ class SoftUpdateTrainer:
                 cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True, return_beams=False, condition_on_first_token=False)
                 #text rewards are not very reliable, thus do a super-cycle
                 super_cycled_sql_batch = self.text2sql(cycled_text_batch)
-                text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
+                text_rewards = self.neural_text_reward(fake_sql_batch, cycled_text_batch)
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 sql_rewards = self.reward_sql(super_cycled_sql_batch, fake_sql_batch)
                 #sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
@@ -160,7 +162,7 @@ class SoftUpdateTrainer:
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
                 for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
-                    update = True in [x for x in text_rewards[sample_id: sample_id + self.args.beam_size] if x > bleu_baseline]
+                    update = True in [x for x in text_rewards[sample_id: sample_id + self.args.beam_size] if x > 0.7]
                     self.train_loader.update_sample(sample_ids[idx], update)
 
                 for fake_item, cycled_item, super_cycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
@@ -168,8 +170,8 @@ class SoftUpdateTrainer:
                     if fake_item.get('fail', False) or cycled_item.get('fail', False) or super_cycled_item.get('fail', False):
                         continue
                     #do not trust these rewards
-                    if not s_reward == 1:
-                        continue
+                    #if not s_reward == 1:
+                    #    continue
                     self.sql_memory.push(fake_item)
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
@@ -398,6 +400,21 @@ class SoftUpdateTrainer:
             if result < 0.2:
                 result = 0.0
             rewards.append(result)
+        return rewards
+
+    def neural_text_reward(self, fake_sql_batch, cycled_text_batch):
+        rewards = []
+        text_in_batch, text_out_batch = [], []
+        for fake_sql_sample, cycled_text_sample in zip(fake_sql_batch, cycled_text_batch):
+            text_in = fake_sql_sample['question']
+            text_out = cycled_text_sample['question']
+            text_in_batch.append(text_in)
+            text_out_batch.append(text_out)
+        embeddings1 = self.similarity_model.encode(text_in_batch, convert_to_tensor=True)
+        embeddings2 = self.similarity_model.encode(text_out_batch, convert_to_tensor=True)
+        cosine_scores = util.cos_sim(embeddings1, embeddings2)
+        for i, cosine_score in enumerate(cosine_scores):
+            rewards.append(float(cosine_score[i]))
         return rewards
 
     def reward_sql(self, fake_text_batch, cycled_sql_batch):
