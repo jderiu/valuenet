@@ -15,7 +15,7 @@ from spacy.lang.en import English
 import wandb
 from collections import deque
 from tqdm import tqdm
-
+ 
 
 def batch_list(iterable, n=1):
     l = len(iterable)
