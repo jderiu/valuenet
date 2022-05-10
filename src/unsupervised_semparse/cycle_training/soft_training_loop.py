@@ -113,8 +113,8 @@ class SoftUpdateTrainer:
             logs = {}
             if step % 2 == 0:
                 text_update += 1
-                fake_text_batch = self.sql2text(batch, skip_vals=True)
-                cycled_sql_batch = self.text2sql(fake_text_batch)
+                fake_text_batch = self.sql2text(batch, skip_vals=True, return_beams=True)
+                cycled_sql_batch = self.text2sql(fake_text_batch, return_beams=False)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
                 self.sql_baseline.extend(sql_rewards)
@@ -132,17 +132,17 @@ class SoftUpdateTrainer:
                 #gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
             else:
                 sql_update += 1
-                fake_sql_batch = self.text2sql(batch)
+                fake_sql_batch = self.text2sql(batch, return_beams=True)
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
-                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True)
+                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True, return_beams=False)
                 #text rewards are not very reliable, thus do a super-cycle
                 super_cycled_sql_batch = self.text2sql(cycled_text_batch)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 sql_rewards = self.reward_sql(super_cycled_sql_batch, fake_sql_batch)
-                sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
+                #sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
                 text_rewards_torch = text_rewards_torch
                 self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
@@ -277,10 +277,11 @@ class SoftUpdateTrainer:
             'ir/loss_lf': mean_lf_loss
         }
 
-    def sql2text(self, batch, skip_vals=False):
+    def sql2text(self, batch, skip_vals=False, return_beams=False):
         beam_size = self.args.beam_size
         encoded_batch, original_rows = self.sql2text_collator(batch, is_eval=True)
         with torch.no_grad(), torch.cuda.amp.autocast():
+            num_return_sequences = 1 if not return_beams else beam_size
             generated_out = self.target_gpt2_model.generate(
                 encoded_batch['input_ids'],
                 attention_mask=encoded_batch['attention_mask'],
@@ -289,6 +290,7 @@ class SoftUpdateTrainer:
                 repetition_penalty=2.5,
                 no_repeat_ngram_size=3,
                 pad_token_id=self.gpt2_tokenizer.pad_token_id,
+                num_return_sequences=num_return_sequences,
             )
         decoded_out = self.gpt2_tokenizer.batch_decode(generated_out, skip_special_tokens=True)
         pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
@@ -308,7 +310,7 @@ class SoftUpdateTrainer:
                 )
         return original_rows
 
-    def text2sql(self, batch):
+    def text2sql(self, batch, return_beams=False):
         beam_size = self.args.beam_size
         examples, original_rows = self.text2sql_collator(batch)
         fake_batch = []
@@ -339,6 +341,20 @@ class SoftUpdateTrainer:
             else:
                 self.create_dummy_row(original_row)
             fake_batch.append(original_row)
+            if return_beams:
+                for prediction in all_predictions[1:]:
+                    try:
+                        original_row = copy.deepcopy(original_row)
+                        original_row['rule_label'] = prediction
+                        original_row['sketch_result'] = " ".join(str(x) for x in prediction[1])
+                        original_row['model_result'] = prediction
+                        sql = _semql_to_sql(original_row, self.schema).replace('"', '')
+                        original_row['query'] = sql
+                        original_row['query_toks'] = tokenize(sql)
+                        fake_batch.append(original_row)
+                    except Exception as e:
+                        continue
+
         return fake_batch
 
     def reward_text(self, fake_sql_batch, cycled_text_batch):
@@ -367,9 +383,9 @@ class SoftUpdateTrainer:
                 self.db_names_to_schema[db_name],
                 self.kmaps
             )
-            partial_score = sum([v['acc'] for k, v in eval_results['partial'].items()]) / len(eval_results['partial'].items())
-            reward = partial_score if partial_score == 1 else 0
-            #reward = -1.0 if eval_results['exact'] == 0 else 1.0
+            #partial_score = sum([v['acc'] for k, v in eval_results['partial'].items()]) / len(eval_results['partial'].items())
+            #reward = partial_score if partial_score == 1 else 0
+            reward = -1.0 if eval_results['exact'] == 0 else 1.0
             rewards.append(reward)
         return rewards
 

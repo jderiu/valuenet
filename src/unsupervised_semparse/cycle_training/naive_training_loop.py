@@ -133,7 +133,7 @@ class NaiveCycleTrainer:
             wandb.log(eval_logs)
 
             #update trainset
-            train_data = self.update_train_set(self.train_loader.dataset, filtered_data)
+            train_data = self.update_train_set(train_data, filtered_data)
             print("Number of fake text:", len(filter_fake_text_data))
             print("Number of fake sql:", len(filter_fake_sql_data))
             wandb.log({
@@ -269,12 +269,12 @@ class NaiveCycleTrainer:
         return rewards
 
     def update_train_set(self, train_set, filtered_train_set):
-        updated_train_set = []
+        updated_train_set_ids = set()
         for i, example in enumerate(filtered_train_set):
             sql_out = example['query']
             db_id = example['db_id']
-            db_train_set = [x for x in train_set if x['db_id'] == db_id]
-            for dp in db_train_set:
+            db_train_set = [(i, x) for i,x in enumerate(train_set) if x['db_id'] == db_id]
+            for j, dp in db_train_set:
                 sql_in = dp['query']
                 eval_results = match_evaluation_single(
                     sql_in,
@@ -286,7 +286,8 @@ class NaiveCycleTrainer:
                 partial_score = sum([v['acc'] for k, v in eval_results['partial'].items()]) / len(
                     eval_results['partial'].items())
                 if partial_score >= 0.8:
-                    updated_train_set.append(dp)
+                    updated_train_set_ids.add(j)
+        updated_train_set = [train_set[i] for i in updated_train_set_ids]
         return updated_train_set
 
     def reward_sql(self, fake_text_batch, cycled_sql_batch):
