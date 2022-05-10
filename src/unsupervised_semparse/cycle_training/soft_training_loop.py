@@ -153,7 +153,7 @@ class SoftUpdateTrainer:
                 cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True, return_beams=False, condition_on_first_token=False)
                 #text rewards are not very reliable, thus do a super-cycle
                 super_cycled_sql_batch = self.text2sql(cycled_text_batch)
-                text_rewards = self.neural_text_reward(fake_sql_batch, cycled_text_batch)
+                text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
                 text_rewards_torch = torch.tensor(text_rewards, dtype=torch.float, device=self.device)
                 sql_rewards = self.reward_sql(super_cycled_sql_batch, fake_sql_batch)
                 #sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
@@ -397,8 +397,6 @@ class SoftUpdateTrainer:
 
             decoded_preds, decoded_labels = postprocess_text([text_out], [text_in])
             result = self.bleu_metric.compute(predictions=decoded_preds, references=decoded_labels)['score'] / 100
-            if result < 0.2:
-                result = 0.0
             rewards.append(result)
         return rewards
 
