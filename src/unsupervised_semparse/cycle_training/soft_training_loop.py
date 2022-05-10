@@ -296,7 +296,7 @@ class SoftUpdateTrainer:
         }
 
     def sql2text(self, batch, skip_vals=False, return_beams=False):
-        beam_size = self.args.beam_size
+        beam_size = self.args.gpt2_beam_size
         pred_batch_out, original_rows = [], []
         num_return_sequences = 1 if not return_beams else beam_size
         for batchy_batch in batch_list(batch, self.args.batch_size):

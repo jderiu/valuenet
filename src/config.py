@@ -187,6 +187,7 @@ def read_arguments_cycletrain():
 
     # prediction configuration (run after each epoch)
     parser.add_argument('--beam_size', default=5, type=int, help='beam size for beam search')
+    parser.add_argument('--gpt2_beam_size', default=5, type=int, help='beam size for beam search')
     parser.add_argument('--decode_max_time_step', default=40, type=int,
                         help='maximum number of time steps used in decoding and sampling')
 
