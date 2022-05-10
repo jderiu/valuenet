@@ -162,7 +162,7 @@ class SoftUpdateTrainer:
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
                 logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
                 for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
-                    update = True in [x for x in text_rewards[sample_id: sample_id + self.args.beam_size] if x > 0.7]
+                    update = True in [x for x in text_rewards[sample_id: sample_id + self.args.beam_size] if x > 0.25]
                     self.train_loader.update_sample(sample_ids[idx], update)
 
                 for fake_item, cycled_item, super_cycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
