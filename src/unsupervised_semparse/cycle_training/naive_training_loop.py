@@ -133,7 +133,7 @@ class NaiveCycleTrainer:
             wandb.log(eval_logs)
 
             #update trainset
-            train_data = self.update_train_set(train_data, filtered_data)
+            train_data = self.update_train_set(self.train_loader.dataset, filtered_data)
             print("Number of fake text:", len(filter_fake_text_data))
             print("Number of fake sql:", len(filter_fake_sql_data))
             wandb.log({
