@@ -45,12 +45,12 @@ class DataCollatorSQL2Text:
         self.grammar = grammar
         self.device = device
 
-    def __call__(self, batch, return_question_mask=False, is_eval=False):
+    def __call__(self, batch, return_question_mask=False, is_eval=False, condition_on_first_token=False):
         examples, original_rows = [], []
         for data_row in batch:
             original_row = copy.deepcopy(data_row)
             try:
-                example = build_sql2text_example(data_row, self.schema, is_decode_only=True, is_eval=is_eval)
+                example = build_sql2text_example(data_row, self.schema, is_decode_only=True, is_eval=is_eval, condition_on_first_token=condition_on_first_token)
                 examples.append(example)
                 original_rows.append(original_row)
             except RuntimeError as e:

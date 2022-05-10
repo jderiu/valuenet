@@ -12,7 +12,6 @@ from src.unsupervised_semparse.cycle_training.utils import get_values, postproce
 from src.spider.test_suite_eval.evaluation import match_evaluation_single, build_foreign_key_map_from_json
 from datasets import load_metric
 from src.optimizer import build_optimizer_encoder, build_optimizer_base
-from torch.nn import CrossEntropyLoss
 from spacy.lang.en import English
 import wandb
 from tqdm import tqdm

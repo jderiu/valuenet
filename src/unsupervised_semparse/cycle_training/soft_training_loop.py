@@ -148,7 +148,7 @@ class SoftUpdateTrainer:
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
-                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True, return_beams=False)
+                cycled_text_batch = self.sql2text(fake_sql_batch, skip_vals=True, return_beams=False, condition_on_first_token=True)
                 #text rewards are not very reliable, thus do a super-cycle
                 super_cycled_sql_batch = self.text2sql(cycled_text_batch)
                 text_rewards = self.reward_text(fake_sql_batch, cycled_text_batch)
@@ -295,12 +295,12 @@ class SoftUpdateTrainer:
             'ir/loss_lf': mean_lf_loss
         }
 
-    def sql2text(self, batch, skip_vals=False, return_beams=False):
+    def sql2text(self, batch, skip_vals=False, return_beams=False, condition_on_first_token=False):
         beam_size = self.args.gpt2_beam_size
         pred_batch_out, original_rows = [], []
         num_return_sequences = 1 if not return_beams else beam_size
         for batchy_batch in batch_list(batch, self.args.batch_size):
-            encoded_batch, original_rows_batch = self.sql2text_collator(batchy_batch, is_eval=True)
+            encoded_batch, original_rows_batch = self.sql2text_collator(batchy_batch, is_eval=True, condition_on_first_token=condition_on_first_token)
             with torch.no_grad(), torch.cuda.amp.autocast():
 
                 generated_out = self.target_gpt2_model.generate(
