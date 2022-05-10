@@ -114,7 +114,7 @@ class SoftUpdateTrainer:
             batch = [self.train_loader.dataset[sample_id] for sample_id in sample_ids]
             #batch = next(iter(self.train_loader))
             logs = {}
-            if step % 2 == 0:
+            if step % 2 == 0 or step < 1000:
                 text_update += 1
                 fake_text_batch = self.sql2text(batch, skip_vals=True, return_beams=False)
                 cycled_sql_batch = self.text2sql(fake_text_batch, return_beams=False)
@@ -157,7 +157,7 @@ class SoftUpdateTrainer:
                     if fake_sql_batch[idx].get('fail', False) or cycled_text_batch[idx].get('fail', False) or super_cycled_sql_batch[idx].get('fail', False):
                         continue
                     #do not trust these rewards
-                    if sql_rewards[idx] == 0:
+                    if not sql_rewards[idx] == 1:
                         continue
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
