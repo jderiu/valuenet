@@ -59,7 +59,7 @@ def build_example(sql, all_schemas):
     return example
 
 
-def build_sql2text_example(sql, all_schemas, is_decode_only=False, is_eval=False):
+def build_sql2text_example(sql, all_schemas, is_decode_only=False, is_eval=False, condition_on_first_token=False):
     # Schema contains detailed information about that database, especially tables & columns, as well as PK/FK relations.
     schema = all_schemas[sql['db_id']]
 
@@ -69,8 +69,10 @@ def build_sql2text_example(sql, all_schemas, is_decode_only=False, is_eval=False
 
     actions = _instantiate_actions(column_table_dict, sql)
 
-    if is_eval and is_decode_only:
+    if is_eval and is_decode_only and not condition_on_first_token:
         question_tokens = ['TEXT:']
+    elif is_eval and is_decode_only and condition_on_first_token:
+        question_tokens = ['TEXT:', sql['question_toks'][0]]
     elif is_decode_only:
         question_tokens = ['TEXT:'] + sql['question_toks']
     else:

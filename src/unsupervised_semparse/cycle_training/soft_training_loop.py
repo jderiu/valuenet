@@ -306,7 +306,7 @@ class SoftUpdateTrainer:
                 generated_out = self.target_gpt2_model.generate(
                     encoded_batch['input_ids'],
                     attention_mask=encoded_batch['attention_mask'],
-                    max_length=encoded_batch['input_ids'].shape[1] + 24,
+                    max_length=encoded_batch['input_ids'].shape[1] + 16,
                     num_beams=beam_size,
                     repetition_penalty=2.5,
                     no_repeat_ngram_size=3,
