@@ -47,7 +47,8 @@ class SoftUpdateTrainer:
             schema,
             db_value_finders,
             dummy_queries,
-            device
+            device,
+            output_path
     ):
         nlp = English()
         self.ir_model = ir_model
@@ -97,11 +98,12 @@ class SoftUpdateTrainer:
         )
 
         self.sql_baseline = []
-        self.bleu_baseline = [0.3]
+        self.bleu_baseline = []
         self.text_memory = ReplayMemory(5000)
         self.sql_memory = ReplayMemory(5000)
         self.ir_tau = 0.001
         self.gpt2_tau = 0.01
+        self.logging_file = open(os.path.join(output_path, "log.txt"), "w")
 
     def train(self):
         num_train_steps = int((len(self.train_loader) * self.args.num_epochs))
@@ -113,7 +115,7 @@ class SoftUpdateTrainer:
             logs = {}
             if step % 2 == 0:
                 text_update += 1
-                fake_text_batch = self.sql2text(batch, skip_vals=True, return_beams=True)
+                fake_text_batch = self.sql2text(batch, skip_vals=True, return_beams=False)
                 cycled_sql_batch = self.text2sql(fake_text_batch, return_beams=False)
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
@@ -127,12 +129,13 @@ class SoftUpdateTrainer:
                     self.text_memory.push(fake_text_batch[idx])
                 if text_update % self.args.update_every == 0:
                     logs = self.update_sql2text()
-                if text_update % 10 == 0:
-                    print(fake_text_batch[0]['query'], fake_text_batch[0]['question'], cycled_sql_batch[0]['query'], sql_rewards[0])
+                for fake_item, cycled_item, reward in zip(fake_text_batch, cycled_sql_batch, sql_rewards):
+                    oline = f"{fake_item['query']}\t{fake_item['question']}\t{cycled_item['query']}\t{reward}\n"
+                    self.logging_file.write(oline)
                 #gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
             else:
                 sql_update += 1
-                fake_sql_batch = self.text2sql(batch, return_beams=True)
+                fake_sql_batch = self.text2sql(batch, return_beams=False)
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
@@ -158,9 +161,11 @@ class SoftUpdateTrainer:
                     self.sql_memory.push(fake_sql_batch[idx])
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
-                if sql_update % 10 == 0:
-                    print(fake_sql_batch[0]['question'], fake_sql_batch[0]['query'], cycled_text_batch[0]['question'], text_rewards[0])
+                for fake_item, cycled_item, supercycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
+                    oline = f"{fake_item['question']}\t{fake_item['query']}\t{cycled_item['question']}\t{supercycled_item['query']}\t{t_reward}\t{s_reward}\n"
+                    self.logging_file.write(oline)
 
+            self.logging_file.flush()
             self.bleu_baseline = self.bleu_baseline[-100:]
             self.sql_baseline = self.sql_baseline[-100:]
             data_loader_logs = self.train_loader.get_logging_info()
