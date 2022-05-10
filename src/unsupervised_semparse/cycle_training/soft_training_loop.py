@@ -114,7 +114,7 @@ class SoftUpdateTrainer:
             batch = [self.train_loader.dataset[sample_id] for sample_id in sample_ids]
             #batch = next(iter(self.train_loader))
             logs = {}
-            if step % 2 == 0 or step < 1000:
+            if step % 2 == 0:
                 text_update += 1
                 fake_text_batch = self.sql2text(batch, skip_vals=True, return_beams=False)
                 cycled_sql_batch = self.text2sql(fake_text_batch, return_beams=False)
