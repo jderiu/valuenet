@@ -81,7 +81,8 @@ if __name__ == '__main__':
         table_data,
         db_value_finders,
         dummy_queries,
-        device
+        device,
+        output_path
     )
 
     trainer.train()
