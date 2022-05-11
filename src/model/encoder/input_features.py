@@ -89,7 +89,7 @@ def encode_input_sql2text(
 
     for question, sql_query, columns, tables, val in zip(question_spans, sql_spans, column_names, table_names, values):
         question_token_ids, question_span_lengths = _tokenize_question(question, tokenizer, add_sep_token)
-        sql_token_ids, sql_span_lengths = _tokenize_question(sql_query, tokenizer)
+        sql_token_ids, sql_span_lengths = _tokenize_question(sql_query, tokenizer, add_sep_token=False)
         column_token_ids, column_token_lengths = _tokenize_schema_names(columns, tokenizer, add_special_token, speicial_tok='</t>')
         table_token_ids, table_token_lengths = _tokenize_schema_names(tables, tokenizer, add_special_token, speicial_tok='</c>')
         value_tokens_ids, value_token_lengths = _tokenize_values(val, tokenizer, add_special_token, speicial_tok='</v>')
