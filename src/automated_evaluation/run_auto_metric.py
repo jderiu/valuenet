@@ -66,8 +66,8 @@ if __name__ == '__main__':
     decoder_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base', add_prefix_space=True)
     decoder_tokenizer.sep_token = decoder_tokenizer.cls_token
     #decoder_tokenizer.eos_token = decoder_tokenizer.cls_token
-    model = BertForSequenceClassification.from_pretrained('bert-large-cased', num_labels=2)
-    #model = BartForSequenceClassification.from_pretrained('facebook/bart-base', num_labels=2)
+    #model = BertForSequenceClassification.from_pretrained('bert-large-cased', num_labels=2)
+    model = BartForSequenceClassification.from_pretrained('facebook/bart-base', num_labels=2)
     model.to(device)
     model.config.problem_type = 'single_label_classification'
     data_collator = DataCollatorSQLPlusText(
