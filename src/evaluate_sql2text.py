@@ -88,8 +88,7 @@ def cycle_eval(
             total += 1
 
             predictions.append(prediction)
-    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(
-        not_all_values_found) / float(total), predictions
+    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(not_all_values_found) / float(total), predictions
 
 
 def evaluate_encode_decode(

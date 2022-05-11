@@ -160,6 +160,8 @@ class DataCollatorCycle:
                     question_tokenized = self.tokenizer(alt_question)
                     question_tokenized = [str(token) for token in question_tokenized]
                     original_row['question_toks'] = question_tokenized
+                    #need to update values
+                    
                 example = build_example(original_row, self.schema)
                 examples.append(example)
             except RuntimeError as e:

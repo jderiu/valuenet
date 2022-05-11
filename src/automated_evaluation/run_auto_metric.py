@@ -9,17 +9,29 @@ from transformers.trainer_seq2seq import Trainer
 from transformers.training_args_seq2seq import TrainingArguments
 from transformers import SchedulerType
 
-from src.model.model import IRNet
-from src.data_loader import get_data_loader
 from src.config import write_config_to_file, read_arguments_pretrain
 from src.intermediate_representation import semQL
 from src.spider import spider_utils
-from src.optimizer import build_optimizer_encoder
+
 from src.utils import setup_device, set_seed_everywhere, create_experiment_folder
 from src.automated_evaluation.data_collator import DataCollatorSQLPlusText
-
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
 # initialize experiment tracking @ Weights & Biases
 import wandb
+
+def compute_metrics(eval_preds):
+    preds, labels = eval_preds
+    preds = np.argmax(preds, axis=1)
+    f1_score_out = f1_score(labels, preds, average='macro')
+    precision_out = precision_score(labels, preds, average='macro')
+    recall_out = recall_score(labels, preds, average='macro')
+    accuracy_out = accuracy_score(labels, preds)
+    return {
+        'f1_score': f1_score_out,
+        'precision': precision_out,
+        'recall': recall_out,
+        'accuracy': accuracy_out
+    }
 
 if __name__ == '__main__':
     args = read_arguments_pretrain()
@@ -50,7 +62,7 @@ if __name__ == '__main__':
     ignore_keys_for_eval = ['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions']
     decoder_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large', add_prefix_space=True)
     decoder_tokenizer.sep_token = decoder_tokenizer.cls_token
-    model = BartForSequenceClassification.from_pretrained('facebook/bart-base')
+    model = BartForSequenceClassification.from_pretrained('facebook/bart-base', num_labels=2)
     model.to(device)
     model.config.problem_type = 'single_label_classification'
     data_collator = DataCollatorSQLPlusText(
@@ -74,6 +86,7 @@ if __name__ == '__main__':
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         num_train_epochs=args.num_epochs,
         evaluation_strategy="epoch",
+        #eval_steps=2,
         eval_accumulation_steps=args.batch_size,
         no_cuda=nocuda,
         #fp16=True,
@@ -92,7 +105,8 @@ if __name__ == '__main__':
         args=train_args,
         data_collator=data_collator,
         train_dataset=sql_data,
-        eval_dataset=val_sql_data
+        eval_dataset=val_sql_data,
+        compute_metrics=compute_metrics
     )
 
     trainer.train(ignore_keys_for_eval=ignore_keys_for_eval)
