@@ -88,7 +88,8 @@ def cycle_eval(
             total += 1
 
             predictions.append(prediction)
-    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(not_all_values_found) / float(total), predictions
+    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(
+        not_all_values_found) / float(total), predictions
 
 
 def evaluate_encode_decode(
@@ -117,7 +118,7 @@ def evaluate_encode_decode(
             )
         pred_batch_out = tokenizer.batch_decode(generated_out, skip_special_tokens=True)
         pred_batch_out = [x.replace('\n', '') for x in pred_batch_out]
-        for split_tok in split_toks: #ugly hack to avoid unending generation
+        for split_tok in split_toks:  # ugly hack to avoid unending generation
             pred_batch_out = [x.split(split_tok)[0] for x in pred_batch_out]
 
         labels = [x['question'] for x in batch]
@@ -145,7 +146,7 @@ def evaulate_decode_only(
         checkpoint_nr=0
 
 ):
-    out_labels, out_preds = [], []
+    out_labels, out_preds, out_sql = [], [], []
     n_eval_steps = int(len(test_data) // args.batch_size) + 1
     for batch in tqdm(batch_list(test_data, args.batch_size), total=n_eval_steps):
         preprocessed_batch = data_collator(batch, is_eval=True)
@@ -160,19 +161,31 @@ def evaulate_decode_only(
                 pad_token_id=tokenizer.pad_token_id,
             )
         decoded_out = tokenizer.batch_decode(generated_out, skip_special_tokens=True)
-        pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
+        pred_batch_out = []
+        for x in decoded_out:
+            splits = x.split('TEXT:')[1:]
+            lens = [len(split) for split in splits]
+            tmp = max(lens)
+            index = lens.index(tmp)
+            pred_batch_out.append(splits[index])
+        #pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
         labels = [x['question'] for x in batch]
+        query_batch = [x['query'] for x in batch]
 
         out_labels.extend(labels)
         out_preds.extend(pred_batch_out)
+        out_sql.extend(query_batch)
     decoded_preds, decoded_labels = postprocess_text(out_preds, out_labels)
     result = metric.compute(predictions=decoded_preds, references=decoded_labels)
     result = {"bleu": result["score"]}
 
-    with open(os.path.join(logging_path, f'results_final_{checkpoint_nr}.txt'), 'wt', encoding='utf-8') as f:
+    with open(os.path.join(logging_path, f'results_final_{checkpoint_nr}.txt'), 'wt', encoding='utf-8') as f, open(
+            os.path.join(logging_path, f'out_final_{checkpoint_nr}.json'), 'wt', encoding='utf-8') as f2:
         f.write(f'BLEU: {result["bleu"]}\n')
-        for pred, label in zip(decoded_preds, decoded_labels):
-            f.write(f"{pred}\t{label[0]}\n")
+        out_json = []
+        for pred, label, query in zip(decoded_preds, decoded_labels, out_sql):
+            f.write(f"{pred}\t{label[0]}\t{query}\n")
+            out_json.append({'question': label[0], 'query': query, 'synthetic_answer': pred})
     return decoded_preds, [x[0] for x in decoded_labels]
 
 
@@ -189,67 +202,36 @@ def main():
     with open(os.path.join(args.model_to_load, "args.json"), "rt", encoding='utf-8') as f:
         train_args = json.load(f)
 
-    if train_args['gen_type'] == 'encoder_decoder':
-        encoder_tokenizer = AutoTokenizer.from_pretrained(train_args['encoder_pretrained_model'], add_prefix_space=True)
-        decoder_tokenizer = AutoTokenizer.from_pretrained('gpt2')
-        if decoder_tokenizer.pad_token_id is None:
-            decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
-        model = EncoderDecoderModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
-        model.to(device)
-        model.eval()
-        pytorch_total_params = sum(p.numel() for p in model.parameters())
-        print(f'Number of Params: {pytorch_total_params}!')
+    decoder_tokenizer = AutoTokenizer.from_pretrained(train_args['decoder_pretrained_model'], add_prefix_space=True)
+    decoder_tokenizer.padding_side = 'left'
+    if decoder_tokenizer.pad_token_id is None:
+        decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
+    if decoder_tokenizer.sep_token_id is None:
+        decoder_tokenizer.sep_token = decoder_tokenizer.bos_token
+    # model = GPT2LMHeadModel.from_pretrained('gpt2')
+    model = GPT2LMHeadModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
+    model.to(device)
+    model.eval()
+    pytorch_total_params = sum(p.numel() for p in model.parameters())
+    print(f'Number of Params: {pytorch_total_params}!')
 
-        data_collator = DataCollatorForSQL2Text(
-            encoder_tokenizer=encoder_tokenizer,
-            decoder_tokenizer=decoder_tokenizer,
-            model=model,
-            grammar=grammar,
-            schema=table_data,
-            device=device
-        )
+    data_collator = DataCollartorForLMSQL2Text(
+        tokenizer=decoder_tokenizer,
+        model=model,
+        grammar=grammar,
+        schema=table_data,
+        device=device
+    )
 
-        decoded_preds, decoded_labels = evaluate_encode_decode(
-            args,
-            val_sql_data,
-            data_collator,
-            model,
-            decoder_tokenizer,
-            args.model_to_load,
-            args.checkpoint
-        )
-
-    else:
-        decoder_tokenizer = AutoTokenizer.from_pretrained(train_args['decoder_pretrained_model'], add_prefix_space=True)
-        decoder_tokenizer.padding_side = 'left'
-        if decoder_tokenizer.pad_token_id is None:
-            decoder_tokenizer.pad_token = decoder_tokenizer.bos_token
-        if decoder_tokenizer.sep_token_id is None:
-            decoder_tokenizer.sep_token = decoder_tokenizer.bos_token
-        # model = GPT2LMHeadModel.from_pretrained('gpt2')
-        model = GPT2LMHeadModel.from_pretrained(os.path.join(args.model_to_load, f'checkpoint-{args.checkpoint}'))
-        model.to(device)
-        model.eval()
-        pytorch_total_params = sum(p.numel() for p in model.parameters())
-        print(f'Number of Params: {pytorch_total_params}!')
-
-        data_collator = DataCollartorForLMSQL2Text(
-            tokenizer=decoder_tokenizer,
-            model=model,
-            grammar=grammar,
-            schema=table_data,
-            device=device
-        )
-
-        decoded_preds, decoded_labels = evaulate_decode_only(
-            args,
-            val_sql_data,
-            data_collator,
-            model,
-            decoder_tokenizer,
-            args.model_to_load,
-            args.checkpoint
-        )
+    decoded_preds, decoded_labels = evaulate_decode_only(
+        args,
+        val_sql_data,
+        data_collator,
+        model,
+        decoder_tokenizer,
+        args.model_to_load,
+        args.checkpoint
+    )
 
     # do cycle consistency evaluation
     model = IRNet(args, device, grammar)
@@ -269,7 +251,9 @@ def main():
         data_collator,
         model
     )
-    print( "Predicted {} examples. Start now converting them to SQL. Sketch-Accuracy: {}, Accuracy: {}, Not all values found: {}".format(
+
+    print(
+        "Predicted {} examples. Start now converting them to SQL. Sketch-Accuracy: {}, Accuracy: {}, Not all values found: {}".format(
             len(val_sql_data), sketch_acc, acc, not_all_values_found))
 
     with open(os.path.join(args.prediction_dir, 'predictions_sem_ql.json'), 'w', encoding='utf-8') as f:
@@ -290,19 +274,22 @@ def main():
         data_collator,
         model
     )
-    print("Predicted {} examples. Start now converting them to SQL. Sketch-Accuracy: {}, Accuracy: {}, Not all values found: {}".format(
+    print(
+        "Predicted {} examples. Start now converting them to SQL. Sketch-Accuracy: {}, Accuracy: {}, Not all values found: {}".format(
             len(val_sql_data), sketch_acc, acc, not_all_values_found))
 
     with open(os.path.join(args.prediction_dir, 'predictions_sem_ql_from_preds.json'), 'w', encoding='utf-8') as f:
         json.dump(predictions, f, indent=2)
 
-    count_success, count_failed = transform_semQL_to_sql(val_table_data, predictions, args.prediction_dir, ofname='output_from_preds.txt')
+    count_success, count_failed = transform_semQL_to_sql(val_table_data, predictions, args.prediction_dir,
+                                                         ofname='output_from_preds.txt')
 
     spider_evaluation.evaluate(
         os.path.join(args.prediction_dir, 'ground_truth.txt'),
         os.path.join(args.prediction_dir, 'output_from_preds.txt'),
         os.path.join(args.data_dir, "testsuite_databases"),
         'exec', None, False, False, False, 1, quickmode=False, log_wandb=False)
+
 
 if __name__ == '__main__':
     main()

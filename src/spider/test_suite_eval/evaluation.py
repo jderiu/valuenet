@@ -721,8 +721,10 @@ def evaluate(
                     scores[level]['partial'][type_]['f1'] = \
                         2.0 * scores[level]['partial'][type_]['acc'] * scores[level]['partial'][type_]['rec'] / (
                         scores[level]['partial'][type_]['rec'] + scores[level]['partial'][type_]['acc'])
-
-    return print_scores(scores, etype, training_step, include_turn_acc=include_turn_acc, log_wandb=log_wandb)
+    if etype in ["all", "exec"]:
+        return print_scores(scores, etype, training_step, include_turn_acc=include_turn_acc, log_wandb=log_wandb), turn_scores
+    else:
+        return print_scores(scores, etype, training_step, include_turn_acc=include_turn_acc, log_wandb=log_wandb)
 
 
 def convert_sql_to_dict(sql_str, schema):

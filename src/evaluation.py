@@ -153,7 +153,7 @@ def main():
     device, n_gpu = setup_device()
     set_seed_everywhere(args.seed, n_gpu)
 
-    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=False)
+    sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
     _, dev_loader = get_data_loader(sql_data, val_sql_data, args.batch_size, True, False)
 
     grammar = semQL.Grammar()
@@ -189,7 +189,7 @@ def main():
         print('We now use the official Spider evaluation script to evaluate the generated/ground truth files.')
         wandb.init(project="proton")
 
-        spider_evaluation.evaluate(os.path.join(args.prediction_dir, 'ground_truth.txt'),
+        _, turn_scores = spider_evaluation.evaluate(os.path.join(args.prediction_dir, 'ground_truth.txt'),
                                    os.path.join(args.prediction_dir, 'output.txt'),
                                    os.path.join(args.data_dir, "testsuite_databases"),
                                    'exec', None, False, False, False, 1, quickmode=False)
