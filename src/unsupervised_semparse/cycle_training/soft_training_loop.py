@@ -91,7 +91,7 @@ class SoftUpdateTrainer:
                                                    growth_interval=2000, enabled=True)
         #self.train_loader, self.dev_loader = get_data_loader(train_data, valid_data, args.batch_size, True, False)
         db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
-        self.train_loader, self.dev_loader = get_random_sampler(train_data, valid_data, args.batch_size, db_names_to_schema, 5)
+        self.train_loader, self.dev_loader = get_random_sampler(valid_data, valid_data, args.batch_size, db_names_to_schema, 5)
         self.text2sql_collator = DataCollatorText2SQL(
             grammar=grammar,
             schema=schema,
@@ -176,8 +176,8 @@ class SoftUpdateTrainer:
                         if fake_item.get('fail', False) or cycled_item.get('fail', False) or super_cycled_item.get('fail', False):
                             continue
                         #do not trust these rewards
-                        #if not s_reward == 1:
-                        #    continue
+                        if not sql_reward == 1:
+                           continue
                         self.sql_memory.push(fake_item)
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
@@ -267,10 +267,10 @@ class SoftUpdateTrainer:
         batch = self.sql_memory.sample(self.args.batch_size)
         rewards_batch = [x['reward'] for x in batch]
         rewards_batch_torch = torch.tensor(rewards_batch, dtype=torch.float, device=self.device)
-        baseline_batch = [x['baseline'] for x in batch]
-        baseline_batch_torch = torch.tensor(baseline_batch, dtype=torch.float, device=self.device)
-        logs = self.train_text2sql(batch, rewards_batch_torch, baseline_batch_torch)
+        # baseline_batch = [x['baseline'] for x in batch]
+        # baseline_batch_torch = torch.tensor(baseline_batch, dtype=torch.float, device=self.device)
         bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
+        logs = self.train_text2sql(batch, rewards_batch_torch, bleu_baseline)
         logs['train/bleu_baseline'] = float(bleu_baseline)
         self.soft_update(self.ir_model, self.target_ir_model, self.ir_tau)
         return logs
