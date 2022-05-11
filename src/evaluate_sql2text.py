@@ -167,7 +167,7 @@ def evaulate_decode_only(
             lens = [len(split) for split in splits]
             tmp = max(lens)
             index = lens.index(tmp)
-            pred_batch_out.append(splits[index])
+            pred_batch_out.append(splits[index].replace('\n', '').replace('TEXT :', '').replace('TEXT', ''))
         #pred_batch_out = [x.split('TEXT:')[1].replace('\n', '').replace('TEXT :', '').replace('TEXT', '') for x in decoded_out]
         labels = [x['question'] for x in batch]
         query_batch = [x['query'] for x in batch]
