@@ -129,10 +129,9 @@ class SoftUpdateTrainer:
                 sql_rewards = self.reward_sql(fake_text_batch, cycled_sql_batch)
                 sql_rewards_torch = torch.tensor(sql_rewards, dtype=torch.float, device=self.device)
                 self.sql_baseline.extend(sql_rewards)
-                logs['train/sql_rewards_torch'] = float(sql_rewards_torch.mean())
                 for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
-                    self.train_loader.update_sample(sample_ids[idx], 1 in sql_rewards[sample_id: sample_id+self.args.beam_size])
-
+                    update = 1 in sql_rewards[sample_id: sample_id+self.args.beam_size]
+                    self.train_loader.update_sample(sample_ids[idx], update)
                 for idx, (fake_item, cycled_item, reward) in enumerate(zip(fake_text_batch, cycled_sql_batch, sql_rewards)):
                     fake_item['reward'] = reward
                     if fake_item.get('fail', False) or cycled_item.get('fail', False):
@@ -140,13 +139,14 @@ class SoftUpdateTrainer:
                     self.text_memory.push(fake_item)
                 if text_update % self.args.update_every == 0:
                     logs = self.update_sql2text()
+                logs['train/sql_rewards_torch'] = float(sql_rewards_torch.mean())
                 for fake_item, cycled_item, reward in zip(fake_text_batch, cycled_sql_batch, sql_rewards):
                     oline = f"{fake_item['query']}\t{fake_item['question']}\t{cycled_item['query']}\t{reward}\n"
                     self.sql_logging_file.write(oline)
                 #gpt_train_res = self.train_sql2text(fake_text_batch, sql_rewards_torch, sql_baseline)
             else:
                 sql_update += 1
-                fake_sql_batch = self.text2sql(batch, return_beams=True)
+                fake_sql_batch = self.text2sql(batch, return_beams=False)
                 #cycled_loss = self.sql2text_loss(fake_sql_batch)
                 #text_rewards_torch = 1 - cycled_loss
                 #text_rewards = [float(x) for x in text_rewards_torch]
@@ -160,7 +160,6 @@ class SoftUpdateTrainer:
                 text_rewards_torch = text_rewards_torch
                 self.bleu_baseline.extend(text_rewards)
                 bleu_baseline = sum(self.bleu_baseline) / len(self.bleu_baseline)
-                logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
                 for idx, sample_id in enumerate(range(0, len(sample_ids), self.args.beam_size)):
                     update = True in [x for x in text_rewards[sample_id: sample_id + self.args.beam_size] if x > 0.25]
                     self.train_loader.update_sample(sample_ids[idx], update)
@@ -181,6 +180,7 @@ class SoftUpdateTrainer:
                         self.sql_memory.push(fake_item)
                 if sql_update % self.args.update_every == 0:
                     logs = self.update_text2sql()
+                logs['train/text_rewards_torch'] = float(text_rewards_torch.mean())
                 for fake_item, cycled_item, supercycled_item, t_reward, s_reward in zip(fake_sql_batch, cycled_text_batch, super_cycled_sql_batch, text_rewards, sql_rewards):
                     oline = f"{fake_item['question']}\t{fake_item['query']}\t{cycled_item['question']}\t{supercycled_item['query']}\t{t_reward}\t{s_reward}\n"
                     self.text_logging_file.write(oline)
