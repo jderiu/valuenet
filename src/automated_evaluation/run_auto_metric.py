@@ -62,10 +62,10 @@ if __name__ == '__main__':
     grammar = semQL.Grammar()
 
     ignore_keys_for_eval = ['past_key_values', 'encoder_last_hidden_state', 'hidden_states', 'cross_attentions']
-    decoder_tokenizer = BertTokenizer.from_pretrained('bert-large-cased', add_prefix_space=True)
-    #decoder_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base', add_prefix_space=True)
+    #decoder_tokenizer = BertTokenizer.from_pretrained('bert-large-cased', add_prefix_space=True)
+    decoder_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base', add_prefix_space=True)
     decoder_tokenizer.sep_token = decoder_tokenizer.cls_token
-    decoder_tokenizer.eos_token = decoder_tokenizer.cls_token
+    #decoder_tokenizer.eos_token = decoder_tokenizer.cls_token
     model = BertForSequenceClassification.from_pretrained('bert-large-cased', num_labels=2)
     #model = BartForSequenceClassification.from_pretrained('facebook/bart-base', num_labels=2)
     model.to(device)
