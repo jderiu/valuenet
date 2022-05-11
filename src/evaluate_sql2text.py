@@ -186,6 +186,7 @@ def evaulate_decode_only(
         for pred, label, query in zip(decoded_preds, decoded_labels, out_sql):
             f.write(f"{pred}\t{label[0]}\t{query}\n")
             out_json.append({'question': label[0], 'query': query, 'synthetic_answer': pred})
+        json.dump(out_json, f2)
     return decoded_preds, [x[0] for x in decoded_labels]
 
 
