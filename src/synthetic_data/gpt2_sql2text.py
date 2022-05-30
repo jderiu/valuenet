@@ -11,6 +11,7 @@ from src.synthetic_data.gpt2_data_collator import DataCollartorForLMSQL2Text
 from src.spider import spider_utils
 from tqdm import tqdm
 
+
 def main():
     args = read_arguments_evaluation()
 

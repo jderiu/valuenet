@@ -129,6 +129,7 @@ def read_arguments_pretrain():
     parser.add_argument('--loss_epoch_threshold', default=50, type=int)
     parser.add_argument('--sketch_loss_weight', default=1.0, type=float)
     parser.add_argument('--model_to_load', type=str, default=None)
+    parser.add_argument('--model_checkpoint', type=str, default=None)
     parser.add_argument('--pretrain_epochs', type=int, default=0)
     parser.add_argument('--eval_every_n_steps', type=int, default=1000)
 
@@ -217,6 +218,7 @@ def read_arguments_evaluation():
     parser.add_argument('--checkpoint', type=int)
     parser.add_argument('--prediction_dir', type=str)
     parser.add_argument('--batch_size', default=1, type=int)
+    parser.add_argument('--api_key', default='1234', type=str)
 
     # general configuration
     parser.add_argument('--seed', default=90, type=int)

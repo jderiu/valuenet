@@ -4,7 +4,7 @@ from transformers import PreTrainedTokenizer
 from src.spider.example import Batch
 from src.spider.example_builder import build_sql2text_example
 from src.model.encoder.input_features import encode_input_sql2text
-
+from src.spider.test_suite_eval.process_sql import tokenize
 
 class DataCollatorSQLPlusText:
 
@@ -22,7 +22,7 @@ class DataCollatorSQLPlusText:
 
     def __call__(self, batch, return_tensors=None, is_eval=False):
         examples, labels = [], []
-        for data_row in batch:
+        for idx, data_row in enumerate(batch):
             try:
                 example = build_sql2text_example(data_row, self.schema, is_decode_only=True, is_eval=is_eval)
                 examples.append(example)
