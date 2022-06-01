@@ -1,3 +1,5 @@
+import copy
+
 import json, os, torch
 from datasets import load_metric
 from sentence_transformers import SentenceTransformer, util
@@ -51,7 +53,7 @@ def compute_sem_sim(in_json):
     cosine_scores = util.cos_sim(embeddings_preds, embeddings_labels)
     sim_scores = []
     for i, cosine_score in enumerate(cosine_scores):
-        cands = cosine_score[2*i:2*i+2].max()
+        cands = cosine_score[n_refs*i:n_refs*i+n_refs].max()
         sim_scores.append(float(cands))
     avg_sem_sim = sum(sim_scores) / len(sim_scores)
     return avg_sem_sim
@@ -127,6 +129,12 @@ def cycle_eval(args, in_json):
     grammar = semQL.Grammar()
     decoded_preds = [x['synthetic_answer'] for x in in_json]
     _, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
+    sql_to_dp = {dp['query']: copy.deepcopy(dp)  for dp in val_sql_data}
+
+    red_val_sql_data = []
+    for entry in in_json:
+        dp = sql_to_dp[entry['query']]
+        red_val_sql_data.append(dp)
 
     model = IRNet(args, device, grammar)
     model.to(device)
@@ -159,7 +167,7 @@ def cycle_eval(args, in_json):
 
     sketch_acc_preds, acc_preds, _, predictions_preds = predict_sql_from_text(
         args,
-        val_sql_data,
+        red_val_sql_data,
         decoded_preds,
         data_collator,
         model
