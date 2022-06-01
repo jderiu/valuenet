@@ -131,11 +131,16 @@ def cycle_eval(args, in_json):
     _, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
     sql_to_dp = {dp['query']: copy.deepcopy(dp)  for dp in val_sql_data}
 
-    red_val_sql_data = []
+    red_val_sql_data, red_in_json= [], []
     for entry in in_json:
+        if sql_to_dp.get(entry['query']) is None:
+            print(entry['query'])
+            continue
         dp = sql_to_dp[entry['query']]
         red_val_sql_data.append(dp)
+        red_in_json.append(entry)
 
+    decoded_preds = [x['synthetic_answer'] for x in red_in_json]
     model = IRNet(args, device, grammar)
     model.to(device)
     model.load_state_dict(torch.load(args.ir_model_to_load), strict=False)

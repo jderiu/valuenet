@@ -37,6 +37,7 @@ def gen_questions(args):
         counter = 0
         n_dps = len(data)
         while counter < n_dps:
+            print(f'Try Sample Nr: {counter + 1}')
             try:
                 entry = data[counter]
                 sql_query = entry['query']
@@ -45,7 +46,7 @@ def gen_questions(args):
                 if sql_to_synth_text.get(sql_query) is not None:
                     counter += 1
                     continue
-                curr_prompt = "#Transate SQL to Natural Language\n#SQL:{}\n#Natural Language:".format(sql_query)
+                curr_prompt = "#Transate SQL to Natural Language\n#SQL: {}\n#Natural Language:".format(sql_query)
                 response, prompt = ask_gpt(
                     curr_prompt,
                     number_of_choices=args.number_of_choices,
