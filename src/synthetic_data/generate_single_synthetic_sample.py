@@ -6,18 +6,17 @@ from pathlib import Path
 import openai
 
 
-def ask_gpt(sample: str, number_of_choices: int, model_id: str):
-
-    prompt = sample + '\n\n###\n\n'
+def ask_gpt(prompt: str, number_of_choices: int, model_id: str):
+    #prompt = sample + '\n\n###\n\n'
     response = openai.Completion.create(
         model=model_id,
         prompt=prompt,
         # top_p=0.9,
-        max_tokens=128,
-        n=number_of_choices,
+        temperature=0.1,
+        max_tokens=100,
+        n=1,
         # frequency_penalty=0.5,
         # presence_penalty=0.5,
-        stop=["\n"]
     )
 
     print(response)
@@ -25,10 +24,11 @@ def ask_gpt(sample: str, number_of_choices: int, model_id: str):
 
 
 def single_request(args):
-
-    prompt = """
+    sql_query = """
 SELECT funding_schemes.title FROM funding_schemes JOIN projects ON funding_schemes.code = projects.ec_fund_scheme WHERE projects.unics_id = 156767
 """.strip()
+
+    prompt = f"#Transate SQL to Natural Language\n#SQL:{sql_query}\n#Natural Language:"
 
     response, prompt = ask_gpt(prompt,
                                number_of_choices=args.number_of_choices,
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--data_path', type=str, default='data/cordis')
     arg_parser.add_argument('--output_folder', type=str, default='data/cordis/generative')
     arg_parser.add_argument('--number_of_choices', type=int, default=8)
-    arg_parser.add_argument('--gpt3_finetuned_model', type=str, default='davinci:ft-personal-2022-01-17-10-28-10')
+    arg_parser.add_argument('--gpt3_finetuned_model', type=str, default='text-davinci-002')
 
     args = arg_parser.parse_args()
     single_request(args)

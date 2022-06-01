@@ -47,10 +47,12 @@ def compute_sem_sim(in_json):
     avg_sem_sim = sum(sim_scores) / len(sim_scores)
     return avg_sem_sim
 
+
 def batch_list(iterable, n=1):
     l = len(iterable)
     for ndx in range(0, l, n):
         yield iterable[ndx:min(ndx + n, l)]
+
 
 def predict_sql_from_text(
         args,
@@ -107,7 +109,8 @@ def predict_sql_from_text(
             total += 1
 
             predictions.append(prediction)
-    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(not_all_values_found) / float(total), predictions
+    return float(sketch_correct) / float(total), float(rule_label_correct) / float(total), float(
+        not_all_values_found) / float(total), predictions
 
 
 def cycle_eval(args, in_json):
@@ -164,15 +167,16 @@ def cycle_eval(args, in_json):
         os.path.join(args.data_dir, "testsuite_databases"),
         'exec', None, False, False, False, 1, quickmode=False, log_wandb=False)
 
-    total, match = 0,0
+    total, match = 0, 0
     for ip, ig in zip(scores_list_pred['exec'], scores_list_gold['exec']):
-       if ig == 1:
-           total += 1
-           if ip == 1:
-               match += 1
+        if ig == 1:
+            total += 1
+            if ip == 1:
+                match += 1
     precision = float(match) / float(total)
 
     return exec_score_pred, exec_score_gold, precision, acc, acc_preds
+
 
 def main():
     args = read_arguments_evaluation()
@@ -193,6 +197,7 @@ def main():
     print(f'Precision: {precision}')
     print(f'Accuracy: {acc}')
     print(f'Accuracy (preds): {acc_preds}')
+
 
 if __name__ == '__main__':
     main()

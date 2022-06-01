@@ -2,7 +2,7 @@ import json
 import os.path
 
 import torch
-
+from collections import defaultdict
 from transformers import AutoTokenizer
 from src.model.encoder_decoder.modeling_encoder_decoder import EncoderDecoderModel
 from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
@@ -182,9 +182,17 @@ def evaulate_decode_only(
             os.path.join(logging_path, f'out_final_{checkpoint_nr}.json'), 'wt', encoding='utf-8') as f2:
         f.write(f'BLEU: {result["bleu"]}\n')
         out_json = []
+        sql_to_orig_text = defaultdict(lambda: [])
+        sql_to_synth_text = {}
         for pred, label, query in zip(decoded_preds, decoded_labels, out_sql):
             f.write(f"{pred}\t{label[0]}\t{query}\n")
-            out_json.append({'question': label[0], 'query': query, 'synthetic_answer': pred})
+            sql_to_orig_text[query].append(label[0])
+            if sql_to_synth_text.get(query) is not None:
+                continue
+            sql_to_synth_text[query] = pred
+            out_json.append({'query': query, 'synthetic_answer': pred})
+        for out_json_entry in out_json:
+            out_json_entry['questions'] = sql_to_orig_text[out_json_entry['query']]
         json.dump(out_json, f2)
     return decoded_preds, [x[0] for x in decoded_labels]
 
