@@ -17,14 +17,19 @@ metric = load_metric("sacrebleu")
 
 def postprocess_text(preds, labels):
     preds = [pred.strip() if len(pred.strip()) > 0 else 'What?' for pred in preds]
-    labels = [[label.strip()] for label in labels]
+    n_ref = max([len(x) for x in labels])
+    for label in labels:
+        llen = len(label)
+        diff = n_ref - llen
+        for i in range(diff):
+            label.append('What?')
 
     return preds, labels
 
 
 def compute_bleu(in_json):
     preds = [x['synthetic_answer'] for x in in_json]
-    labels = [x['question'] for x in in_json]
+    labels = [x['questions'] for x in in_json]
 
     preds, labels = postprocess_text(preds, labels)
     result = metric.compute(predictions=preds, references=labels)
@@ -35,15 +40,19 @@ def compute_sem_sim(in_json):
     similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
 
     preds = [x['synthetic_answer'] for x in in_json]
-    labels = [x['question'] for x in in_json]
+    labels = [x['questions'] for x in in_json]
+    n_refs = max([len(ref) for ref in labels])
+
+    flat_labels = [item for sublist in labels for item in sublist]
 
     embeddings_preds = similarity_model.encode(preds, convert_to_tensor=True)
-    embeddings_labels = similarity_model.encode(labels, convert_to_tensor=True)
+    embeddings_labels = similarity_model.encode(flat_labels, convert_to_tensor=True)
 
     cosine_scores = util.cos_sim(embeddings_preds, embeddings_labels)
     sim_scores = []
     for i, cosine_score in enumerate(cosine_scores):
-        sim_scores.append(float(cosine_score[i]))
+        cands = cosine_score[2*i:2*i+2].max()
+        sim_scores.append(float(cands))
     avg_sem_sim = sum(sim_scores) / len(sim_scores)
     return avg_sem_sim
 
@@ -187,11 +196,10 @@ def main():
         in_json = json.load(f2)
 
     bleu_score = compute_bleu(in_json)
-    sem_sim_score = compute_sem_sim(in_json)
-    exec_score_pred, exec_score_gold, precision, acc, acc_preds = cycle_eval(args, in_json)
-
     print(f'BLEU score: {bleu_score}')
+    sem_sim_score = compute_sem_sim(in_json)
     print(f'Semantic Similarity Score: {sem_sim_score}')
+    exec_score_pred, exec_score_gold, precision, acc, acc_preds = cycle_eval(args, in_json)
     print(f'Execution score: {exec_score_pred}')
     print(f'Execution score (gold): {exec_score_gold}')
     print(f'Precision: {precision}')
