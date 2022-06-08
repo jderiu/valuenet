@@ -13,12 +13,15 @@ def main():
     if args.toy:
         in_json = in_json[:50]
 
+
+
     #create csv file
     with open(os.path.join(logging_path, f'out_final_{checkpoint_nr}.csv'), 'wt', encoding='utf-8', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=['question', 'query', 'synthetic_answer'])
         writer.writeheader()
         for row in in_json:
             writer.writerow(row)
+
 
 if __name__ == '__main__':
     main()

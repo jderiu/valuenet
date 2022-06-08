@@ -129,7 +129,7 @@ def cycle_eval(args, in_json):
     grammar = semQL.Grammar()
     decoded_preds = [x['synthetic_answer'] for x in in_json]
     _, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
-    sql_to_dp = {dp['query']: copy.deepcopy(dp)  for dp in val_sql_data}
+    sql_to_dp = {dp['query']: copy.deepcopy(dp) for dp in val_sql_data}
 
     red_val_sql_data, red_in_json= [], []
     for entry in in_json:

@@ -204,6 +204,7 @@ def main():
     set_seed_everywhere(args.seed, n_gpu)
 
     sql_data, table_data, val_sql_data, val_table_data = spider_utils.load_dataset(args.data_dir, use_small=args.toy)
+    val_sql_data = sql_data
     grammar = semQL.Grammar()
 
     print("Loading pre-trained model from '{}'".format(args.model_to_load))
