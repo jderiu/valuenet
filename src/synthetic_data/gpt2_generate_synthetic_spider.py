@@ -41,7 +41,7 @@ def main():
     )
 
     preprocessed_dataset = []
-    with open(os.path.join(args.data_dir, "original/train.json"), "rt", encoding='utf-8') as f:
+    with open(os.path.join(args.data_dir, "original/dev.json"), "rt", encoding='utf-8') as f:
         data = json.load(f)
         queries_only = {dp['query'].replace("\n", " ").replace("\t", " "): dp['db_id'] for dp in data}
 
