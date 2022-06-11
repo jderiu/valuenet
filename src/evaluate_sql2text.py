@@ -290,8 +290,7 @@ def main():
     with open(os.path.join(args.prediction_dir, 'predictions_sem_ql_from_preds.json'), 'w', encoding='utf-8') as f:
         json.dump(predictions, f, indent=2)
 
-    count_success, count_failed = transform_semQL_to_sql(val_table_data, predictions, args.prediction_dir,
-                                                         ofname='output_from_preds.txt')
+    count_success, count_failed = transform_semQL_to_sql(val_table_data, predictions, args.prediction_dir, ofname='output_from_preds.txt')
 
     spider_evaluation.evaluate(
         os.path.join(args.prediction_dir, 'ground_truth.txt'),

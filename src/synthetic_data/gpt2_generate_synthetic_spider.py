@@ -10,7 +10,7 @@ from src.utils import setup_device, set_seed_everywhere
 from src.synthetic_data.gpt2_data_collator import DataCollartorForLMSQL2Text
 from src.spider import spider_utils
 from tqdm import tqdm
-
+from collections import defaultdict
 
 def main():
     args = read_arguments_evaluation()
@@ -41,9 +41,12 @@ def main():
     )
 
     preprocessed_dataset = []
+    query_to_questions = defaultdict(lambda: [])
     with open(os.path.join(args.data_dir, "original/dev.json"), "rt", encoding='utf-8') as f:
         data = json.load(f)
         queries_only = {dp['query'].replace("\n", " ").replace("\t", " "): dp['db_id'] for dp in data}
+        for dp in data:
+            query_to_questions[dp['query']].append(dp['question'])
 
         for query, db_id in queries_only.items():
             try:
@@ -80,12 +83,12 @@ def main():
         out_dp = {
             'query': query,
             'db_id':db_id,
-            'question':pred_batch_out
+            'questions':query_to_questions[query],
+            'synthetic_answer':pred_batch_out
         }
         out_data.append(out_dp)
-    with open(os.path.join(args.data_dir, "sql2nl_output.jsonl"), "wt", encoding='utf-8') as f:
-        for dp in out_data:
-            f.write(json.dumps(dp) + '\n')
+    with open(os.path.join(args.data_dir, "out_final_0.json"), "wt", encoding='utf-8') as f:
+        json.dump(out_data, f)
 
 
 if __name__ == '__main__':
