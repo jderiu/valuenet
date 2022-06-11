@@ -6,7 +6,7 @@ from typing import List
 
 from spacy.lang.en import English
 
-from src.manual_inference.helper import get_schemas_cordis, tokenize_question, get_schema_hack_zurich
+from src.manual_inference.helper import get_schemas_cordis, tokenize_question, get_schema_hack_zurich, get_schemas_spider, spider_utils, get_schema_world_cup
 from src.spider.test_suite_eval.process_sql import get_sql
 from src.tools.training_data_builder.schema import build_schema_mapping, SchemaIndex
 
@@ -14,7 +14,7 @@ from src.tools.training_data_builder.schema import build_schema_mapping, SchemaI
 def transform_sample(sample, schema_dict, tokenizer):
     database = sample['db_id']
     query = sample['query']
-    question = sample['question']
+    question = sample['question'].strip()
 
     schema_mapping = build_schema_mapping(schema_dict[database])
     schema = SchemaIndex(schema_mapping, schema_dict[database]['column_names_original'], schema_dict[database]['table_names_original'])
@@ -37,8 +37,15 @@ def main(args: argparse.Namespace):
     # load schema necessary for your training data.
     if args.data == 'cordis':
         _, schemas_dict, _, _ = get_schemas_cordis()
+    elif args.data == 'cordis_synth':
+        _, schemas_dict, _, _ = get_schemas_cordis()
+    elif args.data == 'world_cup_data_v2':
+        _, schemas_dict, _= get_schema_world_cup()
     elif args.data == 'hack_zurich':
         _, schemas_dict, _ = get_schema_hack_zurich()
+    elif args.data.startswith('spider_synth_dev_manual_sql'):
+        _, schemas_dict, _, _ = get_schemas_spider()
+        spider_utils.lower_case_info(schemas_dict)
     else:
         raise ValueError('Dataset not yet supported')
 
@@ -52,7 +59,7 @@ def main(args: argparse.Namespace):
 
     training_sample_paths.append(Path(f'data/{args.data}/handmade_training_data/handmade_data_train.json'))
 
-    if args.data == 'cordis':
+    if args.data == 'cordis_OLD':
         training_sample_paths.append(Path('data/cordis/trees/all_adapted.json'))
 
     samples = []
@@ -88,7 +95,7 @@ def main(args: argparse.Namespace):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('--data', type=str, choices=['cordis', 'hack_zurich'], required=True)
+    arg_parser.add_argument('--data', type=str, required=True)
 
     args = arg_parser.parse_args()
     main(args)

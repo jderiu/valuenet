@@ -49,8 +49,7 @@ class NaiveCycleTrainer:
         self.dummy_queries = dummy_queries
         self.db_value_finders = db_value_finders
         self.kmaps = build_foreign_key_map_from_json(os.path.join(args.data_dir, "original", 'tables.json'))
-        self.db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'),
-                                                       list(schema.keys()))
+        self.db_names_to_schema = load_all_schema_data(os.path.join(args.data_dir, 'testsuite_databases'), list(schema.keys()))
         self.bleu_metric = load_metric("sacrebleu")
 
         num_train_steps = len(train_data) * args.num_epochs

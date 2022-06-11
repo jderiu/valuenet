@@ -174,6 +174,7 @@ def negative_sampling_augmentation(sql_data, aug_num=1):
     print("Augmented dataset size: {}".format(len(augmented_dataset)))
     return augmented_dataset
 
+
 def load_schema(schema_path):
 
     with open(schema_path, encoding='utf-8') as inf:
@@ -185,6 +186,11 @@ def load_schema(schema_path):
     table_dict = {table['db_id']: table for table in table_data}
     return table_data, table_dict
 
+
+def lower_case_info(table_dict):
+    for db_id, data in table_dict.items():
+        data['column_names_original'] = [[x[0], x[1].lower()] for x in data['column_names_original']]
+        data['table_names_original'] = [x.lower() for x in data['table_names_original']]
 
 def load_all_schema_data(db_dir, db_names):
     db_names_to_schema = {}

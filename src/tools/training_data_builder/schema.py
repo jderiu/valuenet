@@ -22,10 +22,10 @@ class SchemaIndex:
 
         for table, columns in schema.items():
             for column in columns:
-                id_map[table.lower() + "." + column.lower()] = self._lookup_idx(table, column, column_names_original, table_names_original)
+                id_map[table + "." + column] = self._lookup_idx(table, column, column_names_original, table_names_original)
 
         for table in schema:
-            id_map[table.lower()] = table_names_original.index(table)
+            id_map[table] = table_names_original.index(table)
 
         return id_map
 

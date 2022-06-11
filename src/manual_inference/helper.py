@@ -125,7 +125,7 @@ def get_schema_hack_zurich():
     return schemas_raw, schemas_dict, schema_path
 
 def get_schema_world_cup():
-    base_path = Path(Config.DATA_PREFIX) / 'world_cup_data_v2'
+    base_path = Path(Config.DATA_PREFIX) / 'world_cup_data_v2' / 'original'
     schema_path = str(base_path / 'tables.json')
 
     schemas_raw, schemas_dict = spider_utils.load_schema(schema_path)
